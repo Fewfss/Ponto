@@ -1,0 +1,67 @@
+# BUILD
+target/
+*.jar
+*.war
+*.ear
+*.class
+
+# MAVEN
+backend/.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# SECRETS & CONFIG LOCAL
+.env
+.env.local
+.env.*.local
+application-local.properties
+application-local.yml
+
+# LOGS
+*.log
+logs/
+spring.log
+
+# NODE / REACT
+.react-router
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+dist/
+build/
+.next/
+.nuxt/
+.cache/
+.parcel-cache/
+
+# IDEs — IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# IDEs — VS Code
+.vscode/
+!.vscode/extensions.json
+
+# IDEs — Eclipse / STS
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+# IDEs — NetBeans
+/nbproject/private/
+/nbbuild/
+/nbdist/
+/.nb-gradle/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
