@@ -24,7 +24,7 @@ class GradeImportService
             $professor = Professor::updateOrCreate(
                 ['matricula' => $dados['professor']['matricula']],
                 [
-                    'nome' => $dados['professor']['nome'],
+                    'nome' => $this->normalizarNomeProprio($dados['professor']['nome'] ?? ''),
                     'cpf' => $dados['professor']['cpf'],
                     'regime_juridico' => $dados['professor']['contrato'],
                 ]
@@ -54,7 +54,6 @@ class GradeImportService
                 $componente = $componentesPorNome[$this->normalizarNomeDisciplina($dadosAula['disciplina'])] ?? null;
 
                 if ($componente === null) {
-                    
                     continue;
                 }
 
@@ -77,6 +76,22 @@ class GradeImportService
     private function paraData(?string $dataBr): ?Carbon
     {
         return $dataBr ? Carbon::createFromFormat('d/m/Y', $dataBr) : null;
+    }
+
+    private function normalizarNomeProprio(string $nome): string
+    {
+        $conectivos = ['de', 'da', 'do', 'das', 'dos', 'e'];
+        $palavras = preg_split('/\s+/u', mb_strtolower(trim($nome), 'UTF-8'));
+
+        $resultado = array_map(function ($palavra, $indice) use ($conectivos) {
+            if ($indice > 0 && in_array($palavra, $conectivos, true)) {
+                return $palavra;
+            }
+
+            return mb_convert_case($palavra, MB_CASE_TITLE, 'UTF-8');
+        }, $palavras, array_keys($palavras));
+
+        return implode(' ', $resultado);
     }
 
     private function normalizarNomeDisciplina(string $nome): string

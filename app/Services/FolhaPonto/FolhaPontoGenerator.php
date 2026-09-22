@@ -103,12 +103,34 @@ class FolhaPontoGenerator
             }
 
             $textoAtual = trim($editor->textoDaCelula($celulas[$indiceCelula]));
-            $nomeDisciplina = $aula->componenteCurricular->disciplina ?? '';
 
-            if ($textoAtual === '' ) {
-                $editor->definirTextoDaCelula($celulas[$indiceCelula], $nomeDisciplina);
+            if ($textoAtual === '') {
+                $nomeAbreviado = $this->abreviarDisciplina($aula->componenteCurricular->disciplina ?? '');
+                $editor->definirTextoDisciplinaNaCelula($celulas[$indiceCelula], $nomeAbreviado);
             }
         }
+    }
+
+    private function abreviarDisciplina(string $nome): string
+    {
+        $palavras = preg_split('/\s+/u', trim($nome));
+        $partes = [];
+
+        foreach ($palavras as $palavra) {
+            if ($palavra === '') {
+                continue;
+            }
+
+            if (preg_match('/^[IVXLCDM]+$/i', $palavra)) {
+                // Número romano — mantém por extenso (ex.: "IV").
+                $partes[] = mb_strtoupper($palavra) . '.';
+            } else {
+                // Palavra comum — abrevia pra inicial.
+                $partes[] = mb_strtoupper(mb_substr($palavra, 0, 1)) . '.';
+            }
+        }
+
+        return implode(' ', $partes);
     }
 
     private function calcularOrdemHorarioPorPeriodo(GradeHoraria $grade): array
@@ -147,7 +169,6 @@ class FolhaPontoGenerator
             $celulas = $editor->celulas($linha);
 
             if ($numeroDoDia > $totalDiasDoMes) {
-                // Dia não existe nesse mês (ex.: 30/31 de fevereiro) — remove a linha.
                 $editor->removerLinha($linha);
                 continue;
             }
@@ -155,6 +176,9 @@ class FolhaPontoGenerator
             if (isset($celulas[1])) {
                 $editor->definirTextoDaCelula($celulas[1], $dias[$indice]['dia_semana']);
             }
+
+
+            $editor->definirSombreadoLinha($linha, $dias[$indice]['dia_semana_slug'] === 'domingo');
         }
     }
 
