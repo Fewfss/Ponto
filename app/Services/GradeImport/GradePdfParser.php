@@ -5,9 +5,8 @@ namespace App\Services\GradeImport;
 use RuntimeException;
 use Symfony\Component\Process\Process;
 
-class GradePdfParser
+class GradePdfParser implements GradeParserInterface
 {
-    
     private const COLUNAS_DIA_REFERENCIA = [
         'segunda' => 127,
         'terca' => 263,
@@ -19,14 +18,6 @@ class GradePdfParser
 
     private const TOLERANCIA_COLUNA_DIA = 80;
 
-    /**
-     * @return array{
-     *   professor: array{nome: ?string, matricula: ?string, cpf: ?string, regime_juridico: ?string},
-     *   grade: array{semestre: ?string, validade_inicio: ?string, validade_fim: ?string},
-     *   componentes: array<int, array{disciplina: string, curso: ?string, periodo: string, status: ?string, quantidade_aulas: int}>,
-     *   aulas: array<int, array{disciplina: string, dia_semana: string, periodo: string, hora_inicio: string, hora_fim: string, codigo_op: ?string}>,
-     * }
-     */
     public function parse(string $pdfPath): array
     {
         $textoLinear = $this->pdftotext($pdfPath);
@@ -51,6 +42,10 @@ class GradePdfParser
         return $this->sanitizarUtf8($process->getOutput());
     }
 
+    /**
+     * Roda `pdftohtml -xml` e devolve a lista plana de elementos de texto
+     * com suas coordenadas: [['top' => int, 'left' => int, 'width' => int, 'text' => string], ...]
+     */
     private function pdftohtmlElementos(string $pdfPath): array
     {
         $process = new Process(['pdftohtml', '-xml', '-i', '-enc', 'UTF-8', '-stdout', $pdfPath]);
@@ -94,8 +89,14 @@ class GradePdfParser
         $encodingDetectado = mb_detect_encoding($texto, ['UTF-8', 'ISO-8859-1', 'Windows-1252'], true) ?: 'ISO-8859-1';
         $convertido = mb_convert_encoding($texto, 'UTF-8', $encodingDetectado);
 
+        // Se ainda sobrar algum byte inválido, remove só o byte quebrado
+        // (melhor perder um caractere isolado do que derrubar a requisição).
         return iconv('UTF-8', 'UTF-8//IGNORE', $convertido);
     }
+
+    // ------------------------------------------------------------------
+    // Cabeçalho (professor + validade da grade) — texto linear é suficiente
+    // ------------------------------------------------------------------
 
     private function extrairProfessor(string $texto): array
     {
@@ -125,6 +126,11 @@ class GradePdfParser
         return null;
     }
 
+    /**
+     * Lê a tabela "Horas Aulas" (Disciplina/Projeto | Curso | Período | Status | Qtde).
+     * Cada linha de disciplina é seguida por curso, período, status e quantidade
+     * separados por múltiplos espaços — graças ao `-layout` do pdftotext.
+     */
     private function extrairComponentesCurriculares(string $texto): array
     {
         $componentes = [];
@@ -136,6 +142,7 @@ class GradePdfParser
         $linhas = preg_split('/\R/u', $trecho);
 
         foreach ($linhas as $linha) {
+            // Ex.: "ESPANHOL I (Determinada)     Comércio Exterior     Tarde   Ministrando   2"
             if (! preg_match(
                 '/^(?<disciplina>.+?)\s{2,}(?<curso>.+?)\s{2,}(?<periodo>Manh[ãa]|Tarde|Noite)\s{2,}(?<status>\S+)\s{2,}(?<qtde>\d+)\s*$/u',
                 trim($linha),
@@ -166,6 +173,10 @@ class GradePdfParser
         };
     }
 
+    // ------------------------------------------------------------------
+    // Aulas (dia da semana + horário) — precisa de posição (x, y) no PDF
+    // ------------------------------------------------------------------
+
     /**
      * @return array<int, array{disciplina: string, dia_semana: string, periodo: string, hora_inicio: string, hora_fim: string, codigo_op: ?string}>
      */
@@ -175,6 +186,7 @@ class GradePdfParser
 
         $aulas = [];
         foreach ($elementos as $el) {
+            // Localiza as "caixinhas" de horário, no formato "HH:MM | HH:MM".
             if (! preg_match('/^(\d{2}):(\d{2})\s*\|\s*(\d{2}:\d{2})$/', $el['text'], $m)) {
                 continue;
             }

@@ -21,6 +21,11 @@ class FolhaPontoGenerator
 
     private const ORDEM_DIAS_TABELA = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
 
+    public function __construct(
+        private readonly DocxToPdfConverter $conversorPdf,
+    ) {
+    }
+
     public function gerar(Professor $professor, GradeHoraria $grade, int $mes, int $ano): FolhaPonto
     {
         $caminhoTemplate = Storage::path(self::TEMPLATE_PATH);
@@ -63,9 +68,34 @@ class FolhaPontoGenerator
             [
                 'grade_horaria_id' => $grade->id,
                 'arquivo_gerado' => $nomeArquivo,
+                'arquivo_gerado_pdf' => null,
                 'status' => 'gerada',
             ]
         );
+    }
+
+    public function converterParaPdf(FolhaPonto $folha): FolhaPonto
+    {
+        $caminhoDocxAbsoluto = Storage::path($folha->arquivo_gerado);
+
+        $pastaTemp = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'folha_pdf_' . uniqid();
+        mkdir($pastaTemp);
+
+        $copiaTemp = $pastaTemp . DIRECTORY_SEPARATOR . basename($caminhoDocxAbsoluto);
+        copy($caminhoDocxAbsoluto, $copiaTemp);
+
+        $caminhoPdfGerado = $this->conversorPdf->converter($copiaTemp);
+
+        $nomeArquivoPdf = preg_replace('/\.docx$/i', '.pdf', $folha->arquivo_gerado);
+        Storage::put($nomeArquivoPdf, file_get_contents($caminhoPdfGerado));
+
+        @unlink($copiaTemp);
+        @unlink($caminhoPdfGerado);
+        @rmdir($pastaTemp);
+
+        $folha->update(['arquivo_gerado_pdf' => $nomeArquivoPdf]);
+
+        return $folha->fresh();
     }
 
     private function preencherGradeHoraria(DocxTableEditor $editor, GradeHoraria $grade): void
@@ -80,7 +110,7 @@ class FolhaPontoGenerator
         foreach ($grade->aulas as $aula) {
             $linha = $linhasPorDia[$aula->dia_semana] ?? null;
             if ($linha === null) {
-                continue;
+                continue; // domingo não existe na tabela de grade horária do modelo
             }
 
             $ordemHorario = $ordemHorarioPorPeriodo[$aula->periodo][$aula->hora_inicio] ?? null;
@@ -122,10 +152,8 @@ class FolhaPontoGenerator
             }
 
             if (preg_match('/^[IVXLCDM]+$/i', $palavra)) {
-                // Número romano — mantém por extenso (ex.: "IV").
                 $partes[] = mb_strtoupper($palavra) . '.';
             } else {
-                // Palavra comum — abrevia pra inicial.
                 $partes[] = mb_strtoupper(mb_substr($palavra, 0, 1)) . '.';
             }
         }
@@ -143,7 +171,7 @@ class FolhaPontoGenerator
         $resultado = [];
         foreach ($porPeriodo as $periodo => $horarios) {
             $ordenados = array_keys($horarios);
-            sort($ordenados);
+            sort($ordenados); 
 
             $resultado[$periodo] = [];
             foreach ($ordenados as $posicaoZeroBased => $hora) {
@@ -176,7 +204,6 @@ class FolhaPontoGenerator
             if (isset($celulas[1])) {
                 $editor->definirTextoDaCelula($celulas[1], $dias[$indice]['dia_semana']);
             }
-
 
             $editor->definirSombreadoLinha($linha, $dias[$indice]['dia_semana_slug'] === 'domingo');
         }

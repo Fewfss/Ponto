@@ -18,6 +18,7 @@ class FolhaPonto extends Model
         'mes',
         'ano',
         'arquivo_gerado',
+        'arquivo_gerado_pdf',
         'status',
     ];
 
