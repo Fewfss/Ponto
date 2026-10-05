@@ -44,7 +44,6 @@ body {
   will-change: transform, opacity;
 }
 
-/* Ponto grande */
 .dot {
   width: 2.7em;
   height: 2.7em;

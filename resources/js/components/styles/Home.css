@@ -1,0 +1,40 @@
+.home {
+    width: 100%;
+    min-height: 100vh;
+    background: #000000;
+}
+
+.home-content {
+    width: 100%;
+    height: calc(100vh - 92px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+.home-cards {
+    transform: translateY(-40px);
+    width: 100%;
+    max-width: 1000px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 120px;
+}
+
+.home-cards .card {
+    width: 450px;
+    height: 310px;
+}
+
+.home-cards .card-content h2 {
+    font-size: 40px;
+    line-height: 1.05;
+}
+
+.home-cards .card-content p {
+    margin-top: 20px;
+    font-size: 20px;
+    line-height: 1.2;
+}

@@ -1,0 +1,38 @@
+.navbar {
+    width: 100vw;
+    height: 150px;
+    margin-left: calc(50% - 50vw);
+    background: linear-gradient(100deg, #ffffff 0%, #979797 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.navbar-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: scale(0.5);
+    color: #000000;
+}
+
+.navbar-dots {
+    position: absolute;
+    right: 40px;
+    top: 40%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Poppins', sans-serif;
+    font-size: 70px;
+    font-weight: 700;
+    line-height: 0.25;
+    color: #000000;
+}
+
+.navbar-logo .dot {
+    background-color: #000000;
+}

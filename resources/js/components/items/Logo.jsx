@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
-import "./Logo.css";
+import "../styles/Logo.css";
 
 function Logo() {
   const stageRef = useRef(null);

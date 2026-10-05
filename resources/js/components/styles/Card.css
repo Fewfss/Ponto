@@ -1,0 +1,74 @@
+.card {
+    width: 387px;
+    height: 270px;
+    position: relative;
+    box-sizing: border-box;
+    padding: 24px 46px 28px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 24px;
+    background: linear-gradient(
+        145deg,
+        #242424 0%,
+        #151515 55%,
+        #090909 100%
+    );
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.45);
+    color: #ffffff;
+}
+
+.card-icon {
+    position: absolute;
+    top: -20px;
+    left: -28px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #eeeeee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #000000;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.35);
+}
+
+.card-icon svg {
+    width: 38px;
+    height: 38px;
+}
+
+.card-content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-content h2 {
+    margin: 0;
+    max-width: 300px;
+    font-family: "Poppins", sans-serif;
+    font-size: 34px;
+    line-height: 1.05;
+    font-weight: 800;
+    letter-spacing: -1.5px;
+}
+
+.card-content p {
+    margin: 6px 0 0;
+    max-width: 300px;
+    font-family: "Poppins", sans-serif;
+    font-size: 19px;
+    line-height: 1.25;
+    font-weight: 300;
+    color: #dddddd;
+}
+
+.card-content p strong {
+    font-weight: 800;
+    color: #ffffff;
+}
+
+.card-content button {
+    margin-top: auto;
+    align-self: center;
+}
