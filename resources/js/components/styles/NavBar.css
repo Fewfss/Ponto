@@ -1,38 +1,61 @@
 .navbar {
-    width: 100vw;
-    height: 150px;
-    margin-left: calc(50% - 50vw);
+    /* 100% (e não 100vw): o 100vw inclui a barra de rolagem vertical e gerava rolagem horizontal */
+    width: 100%;
+    height: clamp(80px, 10vw, 120px);
+
     background: linear-gradient(100deg, #ffffff 0%, #979797 100%);
+
     display: flex;
     align-items: center;
     justify-content: center;
+
     position: relative;
+}
+
+/* o menu agora é um <button>: limpa o visual padrão e mostra foco para quem usa teclado */
+button.navbar-dots {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+}
+button.navbar-dots:focus-visible {
+    outline: 3px solid #000;
+    outline-offset: 10px;
+    border-radius: 8px;
 }
 
 .navbar-logo {
     display: flex;
     align-items: center;
     justify-content: center;
-    transform: scale(0.5);
+
+    transform: scale(0.45);
+
     color: #000000;
 }
 
 .navbar-dots {
     position: absolute;
-    right: 40px;
-    top: 40%;
+
+    right: clamp(20px, 4vw, 40px);
+    top: 38%;
     transform: translateY(-50%);
+
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+
     font-family: 'Poppins', sans-serif;
-    font-size: 70px;
+    font-size: clamp(45px, 5vw, 60px);
     font-weight: 700;
     line-height: 0.25;
+
     color: #000000;
 }
 
 .navbar-logo .dot {
     background-color: #000000;
+
 }

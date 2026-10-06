@@ -7,6 +7,9 @@ Route::get('/', function () {
     return Inertia::render('Home');
 });
 
-Route::get('/teste', function () {
-    return Inertia::render('teste');
+Route::get('/grade-horaria', function () {
+    return Inertia::render('Grade');
+});
+Route::get('/folha', function () {
+    return Inertia::render('Folha');
 });

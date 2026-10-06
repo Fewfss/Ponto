@@ -1,0 +1,88 @@
+/* Modal base + grade de formulário (usados pela tela de folhas) */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.78);
+}
+.modal {
+    width: min(clamp(820px, 46vw, 900px), 100%);
+    max-height: calc(100dvh - 32px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 26px;
+    border: 1px solid #3a3a3a;
+    background: linear-gradient(160deg, #262626, #0e0e0e 85%);
+    box-shadow: 0 0 40px rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+.modal-head { padding: 26px 30px 6px; }
+.modal-head h2 { margin: 0; font-size: clamp(20px, 1.2vw, 22px); font-weight: 600; }
+.modal-head p { margin: 6px 0 0; color: #bdbdbd; font-size: var(--fs); font-weight: 300; }
+.modal-body {
+    flex: 1;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    display: grid;
+    align-content: start;
+    gap: 26px;
+    padding: 18px 30px 22px;
+}
+.modal-foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 30px 22px;
+    border-top: 1px solid #3a3a3a;
+}
+
+/* ---------- formulário ---------- */
+.form-group { display: grid; gap: 12px; min-width: 0; }
+.form-group h3 { margin: 0; font-size: var(--fs); font-weight: 500; color: #bdbdbd; }
+.form-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 16px; }
+.form-grid label { display: grid; gap: 6px; min-width: 0; font-size: var(--fs); font-weight: 500; }
+.form-grid input,
+.form-grid select {
+    width: 100%;
+    min-width: 0;
+    height: clamp(42px, 2.2vw, 46px);
+    padding: 0 12px;
+    border-radius: 12px;
+    border: 1px solid #3a3a3a;
+    background: #161616;
+    color: #fff;
+    font-size: var(--fs);
+    font-weight: 300;
+}
+.form-grid input:focus,
+.form-grid select:focus { outline: 2px solid #fff; outline-offset: 1px; }
+.form-grid select {
+    appearance: none;
+    padding: 0 42px 0 16px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 16px;
+}
+.form-grid .span2 { grid-column: span 2; }
+.form-grid .span3 { grid-column: 1 / -1; }
+
+@media (max-width: 760px) {
+    .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .form-grid .span2 { grid-column: 1 / -1; }
+}
+@media (max-width: 480px) {
+    .modal-overlay { padding: 8px; align-items: flex-end; }
+    .modal { border-radius: 22px; max-height: calc(100dvh - 16px); }
+    .modal-head { padding: 20px 18px 4px; }
+    .modal-body { padding: 14px 18px 18px; }
+    .modal-foot { padding: 14px 18px 18px; flex-direction: column-reverse; }
+    .modal-foot .action-btn { width: 100%; }
+    .form-grid { grid-template-columns: minmax(0, 1fr); }
+}

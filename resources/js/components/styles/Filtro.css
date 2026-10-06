@@ -1,0 +1,131 @@
+/* Painel lateral de filtros.
+   Classes com prefixo "filtro-" para não sobrescrever o .menu / .menu-overlay do Menu.css. */
+.filtro-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    justify-content: flex-end;
+    background: rgba(0, 0, 0, 0.85);
+    animation: filtroFade 0.4s ease;
+}
+
+.filtro {
+    position: relative;
+    width: min(clamp(440px, 26vw, 540px), 100%);
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    padding: 28px clamp(24px, 3vw, 48px) 0;
+    background: linear-gradient(80deg, rgb(233, 230, 230) 30%, #aaa9a9 100%);
+    color: #000;
+    animation: filtroSlide 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.filtro-close {
+    position: absolute;
+    top: 18px;
+    right: 20px;
+    border: 0;
+    background: transparent;
+    color: #000;
+    font-size: 56px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.filtro-title {
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    margin: 36px 0 28px;
+    padding: 12px 26px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.8);
+    font-size: clamp(19px, 1.2vw, 22px);
+    font-weight: 500;
+    line-height: 1.2;
+}
+.filtro-title svg { width: 26px; height: 26px; }
+
+/* campos rolam se a tela for baixa; o logo fica fixo no rodapé */
+.filtro-fields {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 2px 2px 20px;
+}
+
+.filtro-field {
+    display: flex;
+    flex-direction: column;
+    padding: 0.12em;
+    gap: 8px;
+    color: #111;
+    font-size: clamp(16px, 1vw, 18px);
+    font-weight: 500;
+}
+
+.filtro-field input,
+.filtro-field select {
+    width: 100%;
+    height: clamp(46px, 2.6vw, 52px);
+    padding: 0 16px;
+    border: 1px solid rgba(0, 0, 0, 0.18);
+    border-radius: 14px;
+    background-color: rgba(255, 255, 255, 0.85);
+    color: #111;
+    font: inherit;
+    font-weight: 400;
+}
+
+.filtro-field select {
+    appearance: none;
+    padding-right: 44px;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='10' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m1.5 1.5 6.5 6.5 6.5-6.5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+}
+
+.filtro-field input:focus-visible,
+.filtro-field select:focus-visible,
+.filtro-close:focus-visible {
+    outline: 2px solid #000;
+    outline-offset: 2px;
+}
+
+/* logo: caixa pequena em fluxo + conteúdo escalado posicionado dentro dela */
+.filtro-logo {
+    flex: none;
+    position: relative;
+    height: 84px;
+    pointer-events: none;
+}
+.filtro-logo .dot { background: #000; }
+.filtro-logo-scale {
+    position: absolute;
+    left: 50%;
+    bottom: 2.5em;
+    width: max-content;
+    color: #000;
+    transform: translateX(-50%) scale(0.4);
+    transform-origin: center bottom;
+}
+
+@keyframes filtroSlide { from { transform: translateX(100%); } to { transform: none; } }
+@keyframes filtroFade { from { opacity: 0; } to { opacity: 1; } }
+
+@media (max-width: 520px) {
+    .filtro { padding: 24px 22px 0; }
+    .filtro-title { margin: 30px 0 20px; }
+}
+@media (max-height: 650px) {
+    .filtro-title { margin: 20px 0 14px; }
+    .filtro-fields { gap: 12px; }
+}
+@media (prefers-reduced-motion: reduce) { .filtro-overlay, .filtro { animation: none; } }

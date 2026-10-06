@@ -1,0 +1,96 @@
+/* Tela de folhas. Busca e botões: Toolbar.css. Modais e formulários: Modal.css. */
+.fp {
+  --card-top: #2c2c2c;
+  --card-bottom: #0e0e0e;
+  --line: #3a3a3a;
+  --muted: #bdbdbd;
+  width: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: clamp(32px, 2.4vw, 44px) var(--page-pad) 72px;
+  box-sizing: border-box;
+  color: #fff;
+  background: #000;
+}
+
+.folha { background: #000; min-height: 100vh; }
+
+/* ---------- filtro por regime ---------- */
+.fp-filter-wrap { position: relative; }
+.fp-menu {
+  position: absolute;
+  top: calc(var(--ctl) + 12px);
+  left: 0;
+  z-index: 5;
+  min-width: 220px;
+  padding: 8px;
+  border-radius: 16px;
+  background: #151515;
+  border: 1px solid var(--line);
+  display: grid;
+  gap: 2px;
+}
+.fp-menu button {
+  text-align: left;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #fff;
+  font-size: var(--fs);
+  cursor: pointer;
+}
+.fp-menu button:hover,
+.fp-menu button[aria-pressed="true"] { background: #2a2a2a; }
+
+/* ---------- card da grade ---------- */
+.fp-list { display: grid; gap: clamp(28px, 1.8vw, 34px); margin-top: clamp(44px, 2.8vw, 54px); }
+
+.fp-card {
+  position: relative;
+  display: grid;
+  gap: clamp(34px, 2.2vw, 42px);
+  padding: clamp(28px, 1.8vw, 34px) clamp(30px, 2vw, 40px);
+  border-radius: 26px;
+  border: 1px solid var(--line);
+  background: linear-gradient(160deg, var(--card-top), var(--card-bottom) 85%);
+  box-shadow: 0 0 34px rgba(255, 255, 255, 0.07);
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.fp-card:hover { border-color: #666; }
+.fp-card:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+.fp-card[aria-current="true"] { border-color: #fff; box-shadow: 0 0 34px rgba(255, 255, 255, 0.22); }
+
+.fp-row { display: flex; flex-wrap: wrap; gap: 14px clamp(30px, 2.2vw, 44px); align-items: baseline; }
+.fp-row:first-of-type { padding-right: clamp(130px, 8vw, 150px); } /* espaço do botão Editar */
+.fp-row--wide { column-gap: clamp(40px, 4vw, 60px); }
+.fp-field { font-size: var(--fs); font-weight: 300; color: var(--muted); white-space: nowrap; }
+.fp-field b { font-weight: 600; color: #fff; margin-right: 6px; }
+.fp-field--title b { color: #cfcfcf; }
+
+/* botão Editar = ActionButton posicionado no canto do card */
+.fp-edit { position: absolute; top: clamp(18px, 1.2vw, 22px); right: clamp(18px, 1.2vw, 22px); }
+
+.fp-empty { margin-top: 60px; text-align: center; color: var(--muted); font-weight: 300; font-size: var(--fs); }
+
+/* ---------- folha de ponto gerada (dentro do modal) ---------- */
+.fp-sheet { background: #fff; color: #111; border-radius: 14px; padding: 18px; font-size: 12px; overflow-x: auto; }
+.fp-sheet h3 { margin: 0 0 4px; font-size: 15px; text-align: center; }
+.fp-sheet .meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 2px 18px; margin: 10px 0 14px; }
+.fp-sheet table { width: 100%; border-collapse: collapse; min-width: 520px; }
+.fp-sheet th, .fp-sheet td { border: 1px solid #999; padding: 4px 6px; text-align: center; }
+.fp-sheet td.dim { background: #e3e3e3; }
+
+@media print {
+  body * { visibility: hidden; }
+  .fp-sheet, .fp-sheet * { visibility: visible; }
+  .fp-sheet { position: absolute; inset: 0; border-radius: 0; }
+}
+
+@media (max-width: 640px) {
+  .fp-row:first-of-type { padding-right: 0; }
+  .fp-edit { position: static; justify-self: start; }
+  .fp-field { white-space: normal; }
+}
+@media (prefers-reduced-motion: reduce) { .fp * { transition: none !important; } }

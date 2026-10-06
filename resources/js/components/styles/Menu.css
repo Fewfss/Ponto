@@ -119,3 +119,22 @@
     transform: scale(0.45);
 }
 
+
+
+.menu-option:focus-visible {
+    outline: 2px solid #000000;
+    outline-offset: 2px;
+    background: #ffffff;
+}
+.menu-close:focus-visible {
+    outline: 2px solid #000000;
+    outline-offset: 2px;
+    border-radius: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .menu-overlay,
+    .menu {
+        animation: none;
+    }
+}

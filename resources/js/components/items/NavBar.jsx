@@ -8,20 +8,26 @@ const NavBar = () => {
 
     return (
         <>
-            <nav className="navbar">
+            <a className="skip-link" href="#conteudo">Pular para o conteúdo</a>
+
+            <header className="navbar">
                 <div className="navbar-logo">
                     <Logo />
                 </div>
 
-                <div
+                <button
+                    type="button"
                     className="navbar-dots"
                     onClick={() => setMenuOpen(true)}
+                    aria-label="Abrir menu"
+                    aria-haspopup="dialog"
+                    aria-expanded={menuOpen}
                 >
-                    <span>.</span>
-                    <span>.</span>
-                    <span>.</span>
-                </div>
-            </nav>
+                    <span aria-hidden="true">.</span>
+                    <span aria-hidden="true">.</span>
+                    <span aria-hidden="true">.</span>
+                </button>
+            </header>
 
             {menuOpen && (
                 <Menu onClose={() => setMenuOpen(false)} />

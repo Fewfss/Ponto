@@ -1,4 +1,4 @@
-import React from "react";
+import { router } from "@inertiajs/react";
 import Botao from "./Botao.jsx";
 import "../styles/Card.css";
 
@@ -7,6 +7,7 @@ const Card = ({
     title,
     description,
     buttonText = "Gerenciar",
+    href,
 }) => {
     return (
         <div className="card">
@@ -19,7 +20,7 @@ const Card = ({
 
                 <p>{description}</p>
 
-                <Botao>
+                <Botao onClick={href ? () => router.visit(href) : undefined}>
                     {buttonText}
                 </Botao>
             </div>
