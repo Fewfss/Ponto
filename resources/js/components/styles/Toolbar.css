@@ -1,0 +1,89 @@
+/* Barra de ações compartilhada: Toolbar, SearchBar, ActionButton e FilterButton.
+   Os tamanhos vêm dos tokens em app.css (--ctl, --fs, --pill). */
+
+.toolbar {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: clamp(14px, 1vw, 18px);
+}
+
+/* ---------- busca ---------- */
+.search-bar {
+    flex: 1 1 320px;
+    min-width: 0;
+    height: var(--ctl);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 clamp(18px, 1.2vw, 22px) 0 clamp(24px, 1.5vw, 28px);
+    border-radius: 999px;
+    background: var(--pill);
+    color: #222;
+}
+.search-bar input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    font-size: var(--fs);
+    font-weight: 300;
+    color: #222;
+}
+.search-bar input::placeholder { color: #3d3d3d; }
+.search-bar:focus-within { box-shadow: 0 0 0 2px #fff; }
+
+/* ---------- botões ---------- */
+.action-btn {
+    height: var(--ctl);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 0 clamp(20px, 1.3vw, 24px);
+    border-radius: 999px;
+    border: 1px solid #555;
+    background: #111;
+    color: #fff;
+    font-size: var(--fs);
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+    box-shadow: 0 0 22px rgba(255, 255, 255, 0.12);
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+.action-btn:hover { transform: translateY(-1px); box-shadow: 0 0 28px rgba(255, 255, 255, 0.25); }
+.action-btn--light { background: var(--pill); color: #111; border-color: #ddd; }
+.search-bar:focus-within,
+.action-btn:focus-visible { outline: none; }
+.action-btn:focus-visible { box-shadow: 0 0 0 2px #fff; }
+
+/* ícones acompanham a altura do controle */
+.search-bar svg,
+.action-btn svg {
+    flex: none;
+    width: calc(var(--ctl) * 0.52);
+    height: calc(var(--ctl) * 0.52);
+}
+.search-bar svg { color: #333; }
+
+.action-btn__badge {
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: #fff;
+    color: #000;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-grid;
+    place-items: center;
+}
+
+@media (max-width: 640px) {
+    .search-bar { flex-basis: 100%; }
+    .toolbar .action-btn { flex: 1; }
+}
+@media (prefers-reduced-motion: reduce) { .action-btn { transition: none; } }
