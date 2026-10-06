@@ -1,0 +1,49 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.stage {
+  position: relative;
+
+  display: flex;
+  align-items: baseline;
+
+  /* o tamanho fica no .stage para que a palavra E o ponto (em em) escalem juntos */
+  font-size: clamp(4rem, 15vw, 10rem);
+}
+
+.word {
+  display: flex;
+
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.char {
+  display: inline-block;
+
+  opacity: 0;
+  transform: scale(0.8);
+
+  will-change: transform, opacity;
+}
+
+.dot {
+  /* 0.27em do tamanho da palavra (antes: 2.7em de 16px = 43px fixos) */
+  width: 0.27em;
+  height: 0.27em;
+
+  background-color: #ffffff;
+  border-radius: 50%;
+
+  margin-left: 0.0875em;
+
+  display: inline-block;
+
+  transform-origin: center bottom;
+
+  will-change: transform;
+}
