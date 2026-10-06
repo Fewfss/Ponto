@@ -1,30 +1,29 @@
-import React from "react";
+import { useRef } from "react";
+import useDialogA11y from "../../hooks/useDialogA11y.js";
 import Logo from "./Logo.jsx";
+import { IconFilter } from "./Icons.jsx";
 import "../styles/Filtro.css";
 
+const SEMESTRES = [1, 2, 3, 4, 5, 6];
+
 function Filtro({ onClose }) {
+    const painelRef = useRef(null);
+    useDialogA11y(painelRef, onClose);
+
     return (
-        <div className="menu-overlay">
-            <div className="menu">
-                <button
-                    className="menu-close"
-                    onClick={onClose}
-                >
+        <div className="filtro-overlay" onMouseDown={onClose}>
+            <aside className="filtro" ref={painelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Filtros"
+                   onMouseDown={(e) => e.stopPropagation()}>
+                <button className="filtro-close" onClick={onClose} aria-label="Fechar filtros">
                     ×
                 </button>
 
                 <h1 className="filtro-title">
-                    <svg
-                        viewBox="0 0 24 24"
-                        className="filtro-title-icon"
-                        aria-hidden="true"
-                    >
-                        <path d="M4 7h16M7 12h10m-7 5h4" />
-                    </svg>
+                    <IconFilter />
                     Filtros
                 </h1>
 
-                <form className="filtro-fields">
+                <form className="filtro-fields" onSubmit={(e) => e.preventDefault()}>
                     <label className="filtro-field">
                         <span>Validade início</span>
                         <input type="date" name="validadeInicio" />
@@ -39,10 +38,8 @@ function Filtro({ onClose }) {
                         <span>Semestre</span>
                         <select name="semestre" defaultValue="">
                             <option value="">Todos os semestres</option>
-                            {[1, 2, 3, 4, 5, 6].map((semestre) => (
-                                <option key={semestre} value={semestre}>
-                                    {semestre}º semestre
-                                </option>
+                            {SEMESTRES.map((s) => (
+                                <option key={s} value={s}>{s}º semestre</option>
                             ))}
                         </select>
                     </label>
@@ -61,7 +58,6 @@ function Filtro({ onClose }) {
                             <option value="matutino">Matutino</option>
                             <option value="vespertino">Vespertino</option>
                             <option value="noturno">Noturno</option>
-                           
                         </select>
                     </label>
 
@@ -75,14 +71,14 @@ function Filtro({ onClose }) {
                     </label>
                 </form>
 
-                <div className="menu-logo">
-                    <div className="menu-logo-scale">
-                        <Logo />
+                <div className="filtro-logo">
+                    <div className="filtro-logo-scale">
+                        <Logo decorativo />
                     </div>
                 </div>
-            </div>
+            </aside>
         </div>
     );
 }
 
-export default Filtro;    
+export default Filtro;

@@ -1,136 +1,30 @@
-.home {
+/* Página de grade horária (conteúdo). A barra de ações fica em Toolbar.css e o painel em Filtro.css. */
+.grade-page {
     width: 100%;
     min-height: 100vh;
-    background: #000000;
+    background: #000;
+    color: #fff;
 }
 
-.home-content {
+.grade-content {
     width: 100%;
-    min-height: calc(100vh - 92px);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 40px 6%;
+    max-width: var(--content-max);
+    margin: 0 auto;
+    padding: clamp(32px, 2.4vw, 44px) var(--page-pad) 72px;
+    display: grid;
+    gap: clamp(24px, 2vw, 36px);
     box-sizing: border-box;
-}
-
-.div-funcao {
-    --bg-from: #dddddd;
-    --bg-to: #3e3e3e;
-    --bg-dot: #ffffff;
-    --bg-orbit-time: 2.2s;
-
-    width: 100%;
-    max-width: 1100px;
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 16px;
-    background: transparent;
-}
-
-.grade-search {
-    min-width: 0;
-    height: 50px;
-    width: 1000px;
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 0 16px;
-    border: 1px solid var(--bg-to);
-    border-radius: 2.0rem;
-    background: linear-gradient(80deg, var(--bg-from) 30%, var(--bg-to) 100%);
-    color:#2f2f2f;  
-    box-sizing: border-box;
-}
-
-.grade-search input {
-    width: 100%;
-    border: 0;
-    outline: 0;
-    background: transparent;
-    color: rgb(17, 17, 17);
-    font: inherit;
-}
-
-.grade-search input::placeholder {
-    color: #757575;
-}
-
-.grade-action-icon {
-    width: 20px;
-    height: 20px;
-    flex: 0 0 auto;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.8;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-
-.grade-action-button {
-    height: 48px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    padding: 0 18px;
-    border: 1px solid linear-gradient(80deg, rgb(152, 149, 149) 30%, #989696 100%);
-    border-radius: 2.0rem;
-    background:  linear-gradient(80deg, rgb(30, 29, 29) 30%, #000000 100%);
-    color: #ffffff;
-    font: inherit;
-    white-space: nowrap;
-    cursor: pointer;
-    transition: background-color 0.2s ease, border-color 0.2s ease;
-}
-
-.grade-action-button:hover {
-    border-color: #bbbbbb;
-    background: #000000;
-}
-
-.filtro-dots {
-    position: absolute;
-    right: 40px;
-    top: 40%;
-    transform: translateY(-50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Poppins', sans-serif;
-    font-size: 70px;
-    font-weight: 700;
-    line-height: 0.25;
-    color: #000000;
-}
-
-.grade-import-button {
-    border-color: #dddddd;
-    background: linear-gradient(80deg, rgb(229, 226, 226) 30%, #7f7c7c 100%);
-    color: #000000;
-}
-
-.grade-import-button:hover {
-    border-color: #ffffff;
-    background: #ffffff;
 }
 
 .div-container-table {
     width: 100%;
-    max-width: 1100px;
-    margin-top: 8px;
-    padding: 28px;
+    padding: clamp(24px, 2vw, 36px);
     border: 1px solid #454545;
-    border-radius: 18px;
+    border-radius: 26px;
     background: linear-gradient(135deg, #292929 0%, #151515 52%, #202020 100%);
     color: #f5f5f5;
     box-sizing: border-box;
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 0 34px rgba(255, 255, 255, 0.07);
 }
 
 .grade-data-section + .grade-data-section,
@@ -144,10 +38,9 @@
 .grade-data-section h2,
 .grade-planner-section h2 {
     margin: 0 0 18px;
-    color: #ffffff;
-    font-family: Poppins, "Montserrat", "Inter", system-ui, sans-serif;
-    font-size: 20px;
+    font-size: clamp(18px, 1.2vw, 22px);
     font-weight: 600;
+    color: #fff;
 }
 
 .grade-data-grid {
@@ -156,95 +49,42 @@
     gap: 14px;
     margin: 0;
 }
-
 .grade-data-grid > div {
     min-width: 0;
-    padding: 12px 14px;
+    padding: 14px 16px;
     border: 1px solid rgba(255, 255, 255, 0.13);
-    border-radius: 10px;
+    border-radius: 12px;
     background: rgba(0, 0, 0, 0.24);
 }
-
-.grade-data-grid dt {
-    margin-bottom: 6px;
-    color: #a7a7a7;
-    font-size: 12px;
-}
-
-.grade-data-grid dd {
-    margin: 0;
-    color: #f5f5f5;
-    font-size: 14px;
-    font-weight: 500;
-    overflow-wrap: anywhere;
-}
-
-.class-data-grid {
-    grid-template-columns: 2fr 2fr 1fr 1fr;
-}
+.grade-data-grid dt { margin-bottom: 6px; color: #b5b5b5; font-size: calc(var(--fs) - 1px); }
+.grade-data-grid dd { margin: 0; color: #f5f5f5; font-size: var(--fs); font-weight: 500; overflow-wrap: anywhere; }
+.class-data-grid { grid-template-columns: 2fr 2fr 1fr 1fr; }
 
 .grade-status {
     display: inline-block;
-    padding: 3px 10px;
+    padding: 3px 12px;
     border-radius: 999px;
     background: #173c26;
     color: #9de3b2;
-    font-size: 12px;
+    font-size: calc(var(--fs) - 1px);
 }
 
-.grade-planner-scroll {
-    width: 100%;
-    overflow-x: auto;
-}
-
-.grade-planner {
-    width: 100%;
-    min-width: 760px;
-    border-collapse: separate;
-    border-spacing: 8px;
-    table-layout: fixed;
-}
-
+/* ---------- quadro de horários ---------- */
+.grade-planner-scroll { width: 100%; overflow-x: auto; }
+.grade-planner { width: 100%; min-width: 760px; border-collapse: separate; border-spacing: 8px; table-layout: fixed; }
 .grade-planner th,
-.grade-planner td {
-    padding: 0;
-    text-align: center;
-    vertical-align: middle;
-}
-
-.grade-planner thead th {
-    padding: 0 8px 8px;
-    color: #e0e0e0;
-    font-size: 12px;
-    font-weight: 500;
-}
-
-.grade-planner thead th:first-child {
-    width: 120px;
-}
-
+.grade-planner td { padding: 0; text-align: center; vertical-align: middle; }
+.grade-planner thead th { padding: 0 8px 8px; color: #e0e0e0; font-size: var(--fs); font-weight: 500; }
+.grade-planner thead th:first-child { width: clamp(120px, 8vw, 140px); }
 .grade-planner tbody td {
-    height: 116px;
+    height: clamp(116px, 8vw, 140px);
     padding: 6px;
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 10px;
     background: rgba(0, 0, 0, 0.2);
 }
-
-.grade-planner .planner-period {
-    padding: 12px 8px;
-    color: #f5f5f5;
-    font-size: 14px;
-    text-align: center;
-}
-
-.planner-period span {
-    display: block;
-    margin-top: 6px;
-    color: #c0c0c0;
-    font-size: 11px;
-    font-weight: 400;
-}
+.grade-planner .planner-period { padding: 12px 8px; color: #f5f5f5; font-size: var(--fs); }
+.planner-period span { display: block; margin-top: 6px; color: #c0c0c0; font-size: calc(var(--fs) - 2px); font-weight: 400; }
 
 .planner-class {
     min-height: 100%;
@@ -254,34 +94,29 @@
     justify-content: center;
     gap: 5px;
     padding: 9px;
-    border-radius: 8px;
-    border: 1px solid #ffffff;
-    background: linear-gradient(145deg, #ffffff 0%, #dedede 100%);
+    border-radius: 10px;
+    border: 1px solid #fff;
+    background: linear-gradient(145deg, #fff 0%, #dedede 100%);
     color: #171717;
     box-sizing: border-box;
-    font-size: 11px;
+    font-size: calc(var(--fs) - 2px);
     text-align: center;
 }
-
-.planner-class strong {
-    font-size: 12px;
-}
-
+.planner-class strong { font-size: calc(var(--fs) - 1px); }
 .planner-class-time {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 5px;
     margin-bottom: 2px;
-    font-size: 10px;
+    font-size: calc(var(--fs) - 3px);
     font-weight: 600;
     white-space: nowrap;
 }
-
 .planner-class-time svg {
     width: 15px;
     height: 15px;
-    flex: 0 0 auto;
+    flex: none;
     fill: none;
     stroke: currentColor;
     stroke-width: 1.8;
@@ -290,38 +125,85 @@
 }
 
 @media (max-width: 640px) {
-    .home-content {
-        padding: 24px 5%;
-    }
-
-    .div-funcao {
-        flex-wrap: wrap;
-        gap: 10px;
-        padding: 12px;
-    }
-
-    .grade-search {
-        flex-basis: 100%;
-    }
-
-    .grade-action-button {
-        flex: 1;
-        padding: 0 12px;
-    }
-
-    .div-container-table {
-        padding: 20px 14px;
-    }
-
+    .div-container-table { padding: 20px 14px; border-radius: 20px; }
     .grade-data-grid,
-    .class-data-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
+    .class-data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-
 @media (max-width: 400px) {
     .grade-data-grid,
-    .class-data-grid {
-        grid-template-columns: 1fr;
-    }
+    .class-data-grid { grid-template-columns: 1fr; }
+}
+
+/* ---------- importação ---------- */
+.grade-aviso { margin: 0; font-size: var(--fs); font-weight: 300; color: #d4d4d4; }
+.grade-aviso--erro { color: #ffb4b4; }
+
+.grade-importadas h2 { margin: 0 0 14px; font-size: var(--fs-lg); font-weight: 600; }
+.grade-importadas ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+
+.grade-arquivo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px 6px 6px;
+    border: 1px solid #3a3a3a;
+    border-radius: 18px;
+    background: linear-gradient(160deg, #2c2c2c, #0e0e0e 85%);
+    transition: border-color 0.15s;
+}
+.grade-arquivo.is-ativo { border-color: #fff; box-shadow: 0 0 24px rgba(255, 255, 255, 0.18); }
+
+.grade-arquivo__main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 12px;
+    border: 0;
+    border-radius: 14px;
+    background: transparent;
+    color: #fff;
+    font-size: var(--fs);
+    text-align: left;
+    cursor: pointer;
+}
+.grade-arquivo__main svg { flex: none; width: 24px; height: 24px; }
+.grade-arquivo__nome { flex: 1; min-width: 0; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.grade-arquivo__meta { flex: none; color: #b5b5b5; font-weight: 300; }
+
+.grade-arquivo__abrir {
+    flex: none;
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: var(--pill);
+    color: #111;
+    font-size: calc(var(--fs) - 1px);
+    font-weight: 500;
+    text-decoration: none;
+}
+.grade-arquivo__remover {
+    flex: none;
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #fff;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+}
+.grade-arquivo__remover:hover { background: #2a2a2a; }
+.grade-arquivo__main:focus-visible,
+.grade-arquivo__abrir:focus-visible,
+.grade-arquivo__remover:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.grade-arquivo-vazio { color: #b5b5b5; font-size: var(--fs); font-weight: 300; }
+
+.grade-origem { margin: -8px 0 16px; color: #b5b5b5; font-size: var(--fs); font-weight: 300; overflow-wrap: anywhere; }
+
+@media (max-width: 640px) {
+    .grade-arquivo { flex-wrap: wrap; }
+    .grade-arquivo__main { flex-basis: 100%; flex-wrap: wrap; row-gap: 4px; }
+    .grade-arquivo__nome { flex-basis: calc(100% - 40px); }
 }

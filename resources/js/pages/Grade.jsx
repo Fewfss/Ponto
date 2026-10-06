@@ -1,67 +1,34 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import { Head } from "@inertiajs/react";
 import NavBar from "../components/items/NavBar.jsx";
 import Filtro from "../components/items/Filtro.jsx";
+import Toolbar from "../components/items/Toolbar.jsx";
+import SearchBar from "../components/items/SearchBar.jsx";
+import FilterButton from "../components/items/FilterButton.jsx";
+import ActionButton from "../components/items/ActionButton.jsx";
+import { IconImport } from "../components/items/Icons.jsx";
 import "../components/styles/Grade.css";
 
 const Grade = () => {
+    const [busca, setBusca] = useState("");
     const [filtroOpen, setFiltroOpen] = useState(false);
 
     return (
-        <div className="home">
+        <div className="grade-page">
+            <Head title="Grade horária" />
             <NavBar />
 
-            <main className="home-content">
-                <div className="div-funcao">
-                    <label className="grade-search">
-
-                        <input
-                            type="search"
-                            placeholder="Pesquise a grade aqui..."
-                            aria-label="Pesquisar grade"
-                        />
-                        <svg
-                            viewBox="0 0 24 24"
-                            className="grade-action-icon"
-                            aria-hidden="true"
-                        >
-                            <circle cx="10.8" cy="10.8" r="6.8" />
-                            <path d="m16 16 5 5" />
-                        </svg>
-                    </label>
-
-                    <button
-                        className="grade-action-button"
-                        type="button"
-                        onClick={() => setFiltroOpen(true)}
-                    >
-                        <svg
-                            viewBox="0 0 24 24"
-                            className="grade-action-icon"
-                            aria-hidden="true"
-                        >
-                            <path d="M4 7h16M7 12h10m-7 5h4" />
-                        </svg>
-                        Filtros
-                    </button>
-                    <button
-                        className="grade-action-button grade-import-button"
-                        type="button"
-                    >
-                        <svg
-                            viewBox="0 0 24 24"
-                            className="grade-action-icon"
-                            aria-hidden="true"
-                        >
-                            <path d="M12 15V3m0 0L7 8m5-5 5 5" />
-                            <path d="M5 14v6h14v-6" />
-                        </svg>
+            <main id="conteudo" tabIndex={-1} className="grade-content">
+                <Toolbar>
+                    <SearchBar value={busca} onChange={(e) => setBusca(e.target.value)} />
+                    <FilterButton onClick={() => setFiltroOpen(true)} />
+                    <ActionButton variant="light" icon={<IconImport />}>
                         Importar
-                    </button>
-                </div>
+                    </ActionButton>
+                </Toolbar>
 
-                {filtroOpen && (
-                    <Filtro onClose={() => setFiltroOpen(false)} />
-                )}
+                {filtroOpen && <Filtro onClose={() => setFiltroOpen(false)} />}
+
                 <div className="div-container-table">
                     <section className="grade-data-section" aria-labelledby="grade-data-title">
                         <h1 id="grade-data-title">Dados da grade</h1>
