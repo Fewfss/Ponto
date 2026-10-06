@@ -1,4 +1,5 @@
 import React from "react";
+import { Head } from "@inertiajs/react";
 import NavBar from "../components/items/NavBar.jsx";
 import Card from "../components/items/Card.jsx";
 import "../components/styles/Home.css";
@@ -6,11 +7,13 @@ import "../components/styles/Home.css";
 const Home = () => {
     return (
         <div className="home">
+            <Head title="Home" />
             <NavBar />
 
-            <main className="home-content">
+            <main id="conteudo" tabIndex={-1} className="home-content">
                 <div className="home-cards">
                     <Card
+                        href="/folha"
                         icon={
                             <svg
                                 viewBox="0 0 48 48"
@@ -72,6 +75,7 @@ const Home = () => {
                     />
 
                     <Card
+                        href="/grade-horaria"
                         icon={
                             <svg
                                 viewBox="0 0 48 48"

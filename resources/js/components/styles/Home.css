@@ -4,37 +4,111 @@
     background: #000000;
 }
 
+/* altura da navbar = clamp(80px, 10vw, 120px) (ver NavBar.css) */
 .home-content {
     width: 100%;
-    height: calc(100vh - 92px);
+    min-height: calc(100vh - clamp(80px, 10vw, 120px));
+    min-height: calc(100dvh - clamp(80px, 10vw, 120px));
     display: flex;
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
+    /* o ícone do card sai 28px para a esquerda e 20px para cima */
+    padding: 56px clamp(40px, 6vw, 96px) 48px;
 }
 
 .home-cards {
-    transform: translateY(-40px);
     width: 100%;
-    max-width: 1000px;
+    max-width: 1300px;
+    --icon: clamp(60px, 3.6vw, 72px);
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 120px;
+    flex-wrap: wrap;
+    align-items: stretch;
+    justify-content: center;
+    gap: clamp(56px, 8vw, 120px) clamp(48px, 8vw, 120px);
+    transform: translateY(-40px);
 }
 
 .home-cards .card {
-    width: 450px;
-    height: 310px;
+    flex: 1 1 360px;
+    width: auto;
+    max-width: clamp(450px, 30vw, 540px);
+    height: auto;
+    min-height: clamp(310px, 19vw, 350px);
+    display: flex;
+    padding: clamp(24px, 1.6vw, 30px) clamp(30px, 3vw, 50px) clamp(28px, 1.8vw, 34px);
+}
+
+.home-cards .card-content {
+    flex: 1;
+    height: auto;
 }
 
 .home-cards .card-content h2 {
-    font-size: 40px;
+    max-width: none;
+    font-size: clamp(30px, 2.7vw, 46px);
     line-height: 1.05;
 }
 
 .home-cards .card-content p {
-    margin-top: 20px;
-    font-size: 20px;
+    max-width: none;
+    margin: 20px 0 28px;
+    font-size: clamp(17px, 1.35vw, 22px);
     line-height: 1.2;
+}
+
+.home-cards .card-icon {
+    width: var(--icon);
+    height: var(--icon);
+    top: calc(var(--icon) * -0.33);
+    left: calc(var(--icon) * -0.47);
+}
+
+.home-cards .card-icon svg {
+    width: calc(var(--icon) * 0.63);
+    height: calc(var(--icon) * 0.63);
+}
+
+.home-cards .bg-btn {
+    height: clamp(3.5rem, 3.1vw, 4rem);
+    padding: 0 clamp(3.25rem, 3.4vw, 4rem);
+    font-size: clamp(1.5rem, 1.4vw, 1.75rem);
+}
+
+/* ---------- tablets e celulares ---------- */
+@media (max-width: 900px) {
+    .home-cards {
+        transform: none;
+    }
+
+    .home-cards .card {
+        flex-basis: 100%;
+        min-height: 280px;
+    }
+}
+
+@media (max-width: 480px) {
+    .home-content {
+        padding: 48px 36px 40px;
+    }
+
+    .home-cards .card {
+        min-height: 250px;
+        border-radius: 20px;
+    }
+
+    .home-cards .card-content h2 {
+        font-size: 30px;
+    }
+
+    .home-cards .card-content p {
+        margin: 14px 0 22px;
+        font-size: 17px;
+    }
+
+    .home-cards .bg-btn {
+        height: 3rem;
+        padding: 0 2.5rem;
+        font-size: 1.25rem;
+    }
 }
