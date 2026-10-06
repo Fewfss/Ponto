@@ -2,7 +2,8 @@ import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import "../styles/Logo.css";
 
-function Logo() {
+// decorativo: use dentro de diálogos onde o logo é só enfeite (leitores de tela ignoram)
+function Logo({ decorativo = false }) {
   const stageRef = useRef(null);
   const wordRef = useRef(null);
   const dotRef = useRef(null);
@@ -11,6 +12,13 @@ function Logo() {
 
   const animate = () => {
     if (isAnimating.current) return;
+
+    // respeita "reduzir movimento" do sistema: mostra o logo pronto, sem animar
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      gsap.set(charsRef.current, { opacity: 1, scale: 1 });
+      gsap.set(dotRef.current, { x: 0, y: 0, scaleX: 1, scaleY: 1 });
+      return;
+    }
 
     isAnimating.current = true;
 
@@ -110,6 +118,7 @@ function Logo() {
       className="stage"
       ref={stageRef}
       onClick={animate}
+      {...(decorativo ? { "aria-hidden": true } : { role: "img", "aria-label": "ponto" })}
     >
       <div className="word" ref={wordRef}>
         {["p", "o", "n", "t", "o"].map((char, index) => (
