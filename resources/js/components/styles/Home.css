@@ -2,25 +2,28 @@
     width: 100%;
     min-height: 100vh;
     background: #000000;
+    display: flex;
+    flex-direction: column;
 }
 
 .home-content {
     width: 100%;
-    height: calc(100vh - 92px);
+    min-height: calc(100vh - 92px);
     display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-direction: column;
     box-sizing: border-box;
 }
 
 .home-cards {
-    transform: translateY(-40px);
     width: 100%;
     max-width: 1000px;
+    flex: 1;
+    margin: 0 auto;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 120px;
+    transform: translateY(-40px);
 }
 
 .home-cards .card {

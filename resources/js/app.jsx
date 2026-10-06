@@ -8,8 +8,8 @@ import { createRoot } from 'react-dom/client';
 createInertiaApp({
     resolve: (name) =>
         resolvePageComponent(
-            `./pages/${name}.jsx`,
-            import.meta.glob('./pages/**/*.jsx')
+            `./Pages/${name}.jsx`,
+            import.meta.glob('./Pages/**/*.jsx')
         ),
     setup({ el, App, props }) {
         createRoot(el).render(<App {...props} />);
