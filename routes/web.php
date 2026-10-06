@@ -8,10 +8,10 @@ Route::get('/', function () {
 });
 
 
-Route::get('/grade-horaria', function () {
+Route::get('/grades-horaria', function () {
     return Inertia::render('Grade');
 });
-Route::get('//folhas-ponto', function () {
+Route::get('/folhas-ponto', function () {
     return Inertia::render('Ponto');
 });
 

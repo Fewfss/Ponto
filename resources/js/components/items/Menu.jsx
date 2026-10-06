@@ -59,7 +59,7 @@ function Menu({ onClose }) {
                     </Link>
 
                     <Link
-                        href="/grade-horaria"
+                        href="/grades-horaria"
                         className={`menu-option ${
                             hoveredItem === "grades" ? "active" : ""
                         }`}

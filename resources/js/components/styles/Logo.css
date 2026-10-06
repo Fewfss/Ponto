@@ -4,21 +4,6 @@
   box-sizing: border-box;
 }
 
-body {
-  background-color: #000000;
-  color: #ffffff;
-  font-family: "Poppins", sans-serif;
-  min-height: 100vh;
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  overflow: hidden;
-  cursor: pointer;
-  user-select: none;
-}
-
 .stage {
   position: relative;
 
@@ -59,4 +44,3 @@ body {
 
   will-change: transform;
 }
-
