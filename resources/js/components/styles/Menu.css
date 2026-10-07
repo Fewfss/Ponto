@@ -3,6 +3,7 @@
     inset: 0;
     width: 100%;
     height: 100vh;
+    height: 100dvh;
     background: rgba(0, 0, 0, 0.85);
     display: flex;
     justify-content: flex-end;
@@ -11,13 +12,14 @@
 }
 
 .menu {
-    width: 460px;
+    width: min(460px, 100%);
     height: 100vh;
+    height: 100dvh;
     background: #eeeeee;
     position: relative;
     display: flex;
     flex-direction: column;
-    padding: 0 50px;
+    padding: 0 clamp(16px, 5vw, 50px);
     box-sizing: border-box;
 
     animation: menuSlide 0.8s cubic-bezier(0.22, 1, 0.36, 1);
@@ -77,11 +79,21 @@
     font-size: 21px;
     font-weight: 400;
     color: #000000;
-    transition: background 0.3s ease;
+    transition: background 0.3s ease, transform 0.25s ease, box-shadow 0.25s ease;
 }
 
 .menu-option.active {
     background: #ffffff;
+}
+
+/* hover: a opção ganha fundo branco, desliza um pouco para a direita e recebe uma sombra leve.
+   Só em dispositivos com mouse, para não "grudar" depois de um toque no celular. */
+@media (hover: hover) {
+    .menu-option:hover {
+        background: #ffffff;
+        transform: translateX(6px);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+    }
 }
 
 .menu-icon {
@@ -132,9 +144,19 @@
     border-radius: 8px;
 }
 
+@media (max-width: 480px) {
+    .menu-options { margin-top: 120px; gap: 12px; }
+    .menu-option { height: auto; min-height: 60px; padding: 10px 12px; gap: 14px; font-size: 18px; }
+    .menu-option span { white-space: normal; }
+    .menu-icon { width: 30px; height: 30px; }
+    .menu-close { font-size: 48px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .menu-overlay,
     .menu {
         animation: none;
     }
+    .menu-option { transition: background 0.3s ease; }
+    .menu-option:hover { transform: none; box-shadow: none; }
 }

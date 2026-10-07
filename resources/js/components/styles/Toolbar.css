@@ -54,8 +54,13 @@
     box-shadow: 0 0 22px rgba(255, 255, 255, 0.12);
     transition: transform 0.15s, box-shadow 0.15s;
 }
-.action-btn:hover { transform: translateY(-1px); box-shadow: 0 0 28px rgba(255, 255, 255, 0.25); }
+.action-btn:hover {box-shadow: 0 0 28px rgba(255, 255, 255, 0.25); }
 .action-btn--light { background: var(--pill); color: #111; border-color: #ddd; }
+.action-btn--dark:hover {border-color: white;}.action-btn--light:hover {
+    background: #f0f0f0;
+    border-color: #ccc;
+}
+
 .search-bar:focus-within,
 .action-btn:focus-visible { outline: none; }
 .action-btn:focus-visible { box-shadow: 0 0 0 2px #fff; }

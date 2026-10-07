@@ -11,6 +11,15 @@
 
     position: relative;
 }
+.navbar-logo a,
+.navbar-logo a:visited,
+.navbar-logo a:hover,
+.navbar-logo a:active {
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
+}
+
 
 /* o menu agora é um <button>: limpa o visual padrão e mostra foco para quem usa teclado */
 button.navbar-dots {
