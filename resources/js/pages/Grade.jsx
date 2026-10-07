@@ -9,6 +9,46 @@ import ActionButton from "../components/items/ActionButton.jsx";
 import { IconImport } from "../components/items/Icons.jsx";
 import "../components/styles/Grade.css";
 
+const PERIODOS = [
+    { id: "manha", label: "Manhã", time: "08:00 – 09:40" },
+    { id: "tarde", label: "Tarde", time: "14:00 – 15:40" },
+    { id: "noite", label: "Noite", time: "19:00 – 20:40" },
+];
+
+const DIAS = [
+    { id: "segunda", label: "Segunda" },
+    { id: "terca", label: "Terça" },
+    { id: "quarta", label: "Quarta" },
+    { id: "quinta", label: "Quinta" },
+    { id: "sexta", label: "Sexta" },
+    { id: "sabado", label: "Sábado" },
+];
+
+// Dados de exemplo: em quais períodos/dias existe aula.
+const temAula = (periodId, dayId) =>
+    (periodId === "noite" && ["segunda", "quarta", "sexta"].includes(dayId)) ||
+    (periodId === "tarde" && dayId === "terca") ||
+    (periodId === "manha" && dayId === "sabado");
+
+// Cartão de aula, usado tanto na tabela quanto na lista por dia.
+// Na tabela o horário aparece no cartão; na lista ele já vem ao lado, então showTime={false}.
+const AulaCard = ({ periodo, showTime = true }) => (
+    <div className="planner-class">
+        {showTime && (
+            <div className="planner-class-time">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 7v5l3 2" />
+                </svg>
+                <span>{periodo.time}</span>
+            </div>
+        )}
+        <strong>OP: 111</strong>
+        <span>Espanhol</span>
+        <span>89261</span>
+    </div>
+);
+
 const Grade = () => {
     const [busca, setBusca] = useState("");
     const [filtroOpen, setFiltroOpen] = useState(false);
@@ -55,60 +95,61 @@ const Grade = () => {
 
                     <section className="grade-planner-section" aria-labelledby="planner-title">
                         <h2 id="planner-title">Grade Horaria</h2>
+
+                        {/* Telas largas: tabela período x dia da semana */}
                         <div className="grade-planner-scroll">
                             <table className="grade-planner">
                                 <thead>
                                     <tr>
                                         <th scope="col">Período</th>
-                                        <th scope="col">Segunda</th>
-                                        <th scope="col">Terça</th>
-                                        <th scope="col">Quarta</th>
-                                        <th scope="col">Quinta</th>
-                                        <th scope="col">Sexta</th>
-                                        <th scope="col">Sábado</th>
+                                        {DIAS.map((dia) => (
+                                            <th key={dia.id} scope="col">{dia.label}</th>
+                                        ))}
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {[
-                                        { id: "manha", label: "Manhã", time: "08:00 – 09:40" },
-                                        { id: "tarde", label: "Tarde", time: "14:00 – 15:40" },
-                                        { id: "noite", label: "Noite", time: "19:00 – 20:40" },
-                                    ].map((period) => (
-                                        <tr key={period.id}>
+                                    {PERIODOS.map((periodo) => (
+                                        <tr key={periodo.id}>
                                             <th scope="row" className="planner-period">
-                                                {period.label}
-                                                <span>{period.time}</span>
+                                                {periodo.label}
+                                                <span>{periodo.time}</span>
                                             </th>
-                                            {["segunda", "terca", "quarta", "quinta", "sexta", "sabado"].map((day) => {
-                                                const hasClass =
-                                                    (period.id === "noite" && ["segunda", "quarta", "sexta"].includes(day)) ||
-                                                    (period.id === "tarde" && day === "terca") ||
-                                                    (period.id === "manha" && day === "sabado");
-
-                                                return (
-                                                    <td key={day}>
-                                                        {hasClass && (
-                                                            <div className="planner-class">
-                                                                <div className="planner-class-time">
-                                                                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                                                                        <circle cx="12" cy="12" r="9" />
-                                                                        <path d="M12 7v5l3 2" />
-                                                                    </svg>
-                                                                    <span>{period.time}</span>
-                                                                </div>
-                                                                <strong>OP: 111</strong>
-                                                                <span>Espanhol</span>
-                                                                <span>89261</span>
-                                                            </div>
-                                                        )}
-                                                    </td>
-                                                );
-                                            })}
+                                            {DIAS.map((dia) => (
+                                                <td key={dia.id}>
+                                                    {temAula(periodo.id, dia.id) && <AulaCard periodo={periodo} />}
+                                                </td>
+                                            ))}
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
                         </div>
+
+                        {/* Telas pequenas: um cartão por dia, sem rolagem lateral */}
+                        <ul className="planner-days" role="list">
+                            {DIAS.map((dia) => {
+                                const aulas = PERIODOS.filter((periodo) => temAula(periodo.id, dia.id));
+
+                                return (
+                                    <li key={dia.id} className="planner-day">
+                                        <h3>{dia.label}</h3>
+                                        {aulas.length > 0 ? (
+                                            aulas.map((periodo) => (
+                                                <div key={periodo.id} className="planner-day-item">
+                                                    <div className="planner-day-when">
+                                                        <strong>{periodo.label}</strong>
+                                                        <span>{periodo.time}</span>
+                                                    </div>
+                                                    <AulaCard periodo={periodo} showTime={false} />
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <p className="planner-day-empty">Sem aulas</p>
+                                        )}
+                                    </li>
+                                );
+                            })}
+                        </ul>
                     </section>
                 </div>
 
