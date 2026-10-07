@@ -7,7 +7,7 @@ import SearchBar from "../components/items/SearchBar.jsx";
 import FilterButton from "../components/items/FilterButton.jsx";
 import ActionButton from "../components/items/ActionButton.jsx";
 import { IconNewDoc, IconPen } from "../components/items/Icons.jsx";
-import "../components/styles/folha.css";
+import "../components/styles/Folha.css";
 
 //Sem integração ao backend(vai ter q mudar dps pra colocar os fetch)
 const GRADES_INICIAIS = [
