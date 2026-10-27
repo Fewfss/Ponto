@@ -7,7 +7,8 @@ import SearchBar from "../components/items/SearchBar.jsx";
 import FilterButton from "../components/items/FilterButton.jsx";
 import ActionButton from "../components/items/ActionButton.jsx";
 import { IconNewDoc, IconPen } from "../components/items/Icons.jsx";
-import "../components/styles/folha.css";
+import Footer from "../components/items/Footer.jsx";
+import "../components/styles/Folha.css";
 
 //Sem integração ao backend(vai ter q mudar dps pra colocar os fetch)
 const GRADES_INICIAIS = [
@@ -346,6 +347,7 @@ export default function Folha() {
           <ModalGerar grades={grades} gradeInicial={selecionada} onClose={() => setGerando(false)} />
         )}
       </main>
+      <Footer />
     </div>
   );
 }

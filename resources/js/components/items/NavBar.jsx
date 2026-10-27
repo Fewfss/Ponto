@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from '@inertiajs/react';
 import Logo from './Logo.jsx';
 import Menu from './Menu.jsx';
 import '../styles/NavBar.css';
@@ -12,7 +13,9 @@ const NavBar = () => {
 
             <header className="navbar">
                 <div className="navbar-logo">
-                    <Logo />
+                    <Link href="/" aria-label="Ir para a página inicial">
+                        <Logo />
+                    </Link>
                 </div>
 
                 <button

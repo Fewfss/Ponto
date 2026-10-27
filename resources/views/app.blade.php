@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -10,5 +11,19 @@
 </head>
 <body>
     @inertia
+
+    <!-- Widget de acessibilidade UserWay -->
+   
+<!-- Widget de acessibilidade UserWay -->
+<script>
+    (function(d) {
+        var s = d.createElement("script");
+        s.setAttribute("data-account", "dEcXIkLEZp");
+        s.setAttribute("data-position", "3");
+        s.setAttribute("src", "https://cdn.userway.org/widget.js");
+        (d.body || d.head).appendChild(s);
+    })(document);
+</script>
+
 </body>
 </html>
