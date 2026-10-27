@@ -30,7 +30,25 @@
     font-size: 14px;
     font-weight: 300;
     line-height: 1.5;
+}
+
+.footer-links a,
+.footer-links a:visited {
     color: #ffffff;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.footer-team a,
+.footer-team a:visited {
+    color: #ffffff;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.footer-links a:hover {
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
 }
 
 .footer-team {
