@@ -1,252 +1,173 @@
-/* Página de grade horária (conteúdo). A barra de ações fica em Toolbar.css e o painel em Filtro.css. */
-.grade-page {
-    width: 100%;
-    min-height: 100vh;
-    background: #000;
-    color: #fff;
-}
+/* Tela de grades: lista de cards (mesmo padrão da tela de folhas). Busca e botões: Toolbar.css.
+   Modais: Modal.css. Documento da grade: GradeDocumento.css. Painel de filtros: Filtro.css. */
+.grade-page { width: 100%; min-height: 100vh; background: #000; color: #fff; }
 
 .grade-content {
+    --line: #3a3a3a;
+    --muted: #bdbdbd;
     width: 100%;
     max-width: var(--content-max);
     margin: 0 auto;
     padding: clamp(32px, 2.4vw, 44px) var(--page-pad) 72px;
     display: grid;
-    /* minmax(0, 1fr): sem isso a coluna cresce até caber o conteúdo mais largo (a tabela) e a página inteira vaza para o lado */
     grid-template-columns: minmax(0, 1fr);
+    align-content: start;
     gap: clamp(24px, 2vw, 36px);
     box-sizing: border-box;
 }
 
-.div-container-table {
-    width: 100%;
-    min-width: 0;
-    padding: clamp(24px, 2vw, 36px);
-    border: 1px solid #454545;
-    border-radius: 26px;
-    background: linear-gradient(135deg, #292929 0%, #151515 52%, #202020 100%);
-    color: #f5f5f5;
-    box-sizing: border-box;
-    box-shadow: 0 0 34px rgba(255, 255, 255, 0.07);
-}
+/* ---------- lista e cards ---------- */
+.gr-list { display: grid; gap: clamp(28px, 1.8vw, 34px); margin-top: clamp(20px, 1.6vw, 28px); }
 
-.grade-data-section + .grade-data-section,
-.grade-planner-section {
-    margin-top: 28px;
-    padding-top: 24px;
-    border-top: 1px solid rgba(255, 255, 255, 0.18);
-}
-
-.grade-data-section h1,
-.grade-data-section h2,
-.grade-planner-section h2 {
-    margin: 0 0 18px;
-    font-size: clamp(18px, 1.2vw, 22px);
-    font-weight: 600;
-    color: #fff;
-}
-
-.grade-data-grid {
+.gr-card {
+    position: relative;
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 14px;
-    margin: 0;
-}
-.grade-data-grid > div {
-    min-width: 0;
-    padding: 14px 16px;
-    border: 1px solid rgba(255, 255, 255, 0.13);
-    border-radius: 12px;
-    background: rgba(0, 0, 0, 0.24);
-}
-.grade-data-grid dt { margin-bottom: 6px; color: #b5b5b5; font-size: calc(var(--fs) - 1px); }
-.grade-data-grid dd { margin: 0; color: #f5f5f5; font-size: var(--fs); font-weight: 500; overflow-wrap: anywhere; }
-.class-data-grid { grid-template-columns: 2fr 2fr 1fr 1fr; }
-
-.grade-status {
-    display: inline-block;
-    padding: 3px 12px;
-    border-radius: 999px;
-    background: #173c26;
-    color: #9de3b2;
-    font-size: calc(var(--fs) - 1px);
-}
-
-/* ---------- quadro de horários ---------- */
-.grade-planner-scroll { width: 100%; overflow-x: auto; }
-.grade-planner { width: 100%; min-width: 760px; border-collapse: separate; border-spacing: 8px; table-layout: fixed; }
-.grade-planner th,
-.grade-planner td { padding: 0; text-align: center; vertical-align: middle; }
-.grade-planner thead th { padding: 0 8px 8px; color: #e0e0e0; font-size: var(--fs); font-weight: 500; }
-.grade-planner thead th:first-child { width: clamp(120px, 8vw, 140px); }
-.grade-planner tbody td {
-    height: clamp(116px, 8vw, 140px);
-    padding: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 10px;
-    background: rgba(0, 0, 0, 0.2);
-}
-.grade-planner .planner-period { padding: 12px 8px; color: #f5f5f5; font-size: var(--fs); }
-.planner-period span { display: block; margin-top: 6px; color: #c0c0c0; font-size: calc(var(--fs) - 2px); font-weight: 400; }
-
-.planner-class {
-    min-height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    padding: 9px;
-    border-radius: 10px;
-    border: 1px solid #fff;
-    background: linear-gradient(145deg, #fff 0%, #dedede 100%);
-    color: #171717;
-    box-sizing: border-box;
-    font-size: calc(var(--fs) - 2px);
-    text-align: center;
-}
-.planner-class strong { font-size: calc(var(--fs) - 1px); }
-.planner-class strong,
-.planner-class span { max-width: 100%; overflow-wrap: anywhere; }
-.planner-class-time {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    margin-bottom: 2px;
-    font-size: calc(var(--fs) - 3px);
-    font-weight: 600;
-    white-space: nowrap;
-}
-.planner-class-time svg {
-    width: 15px;
-    height: 15px;
-    flex: none;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.8;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-
-/* ---------- grade por dia (telas pequenas) ---------- */
-.planner-days {
-    display: none;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
-    gap: 12px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-.planner-day {
-    min-width: 0;
-    padding: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 14px;
-    background: rgba(0, 0, 0, 0.2);
-}
-.planner-day h3 { margin: 0 0 12px; font-size: var(--fs-lg); font-weight: 600; color: #fff; }
-.planner-day-item { display: grid; grid-template-columns: minmax(84px, 30%) minmax(0, 1fr); gap: 12px; align-items: stretch; }
-.planner-day-item + .planner-day-item { margin-top: 10px; }
-.planner-day-when { display: flex; flex-direction: column; justify-content: center; gap: 4px; color: #f5f5f5; font-size: var(--fs); }
-.planner-day-when span { color: #c0c0c0; font-size: calc(var(--fs) - 2px); }
-.planner-day-empty { margin: 0; color: #9a9a9a; font-size: calc(var(--fs) - 1px); }
-
-/* notebook pequeno / tablet deitado: a coluna "Período" já mostra o horário, então tiramos o relógio do cartão para caber */
-@media (max-width: 1100px) {
-    .grade-planner { border-spacing: 6px; }
-    .grade-planner thead th:first-child { width: 96px; }
-    .grade-planner .planner-class-time { display: none; }
-}
-
-/* tablet em pé e celular: tabela vira uma lista de cartões por dia */
-@media (max-width: 900px) {
-    .grade-data-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .class-data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .grade-planner-scroll { display: none; }
-    .planner-days { display: grid; }
-}
-
-@media (max-width: 640px) {
-    .div-container-table { padding: 20px 14px; border-radius: 20px; }
-    .grade-data-grid,
-    .class-data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-@media (max-width: 400px) {
-    .grade-data-grid,
-    .class-data-grid { grid-template-columns: 1fr; }
-}
-
-/* ---------- importação ---------- */
-.grade-aviso { margin: 0; font-size: var(--fs); font-weight: 300; color: #d4d4d4; }
-.grade-aviso--erro { color: #ffb4b4; }
-
-.grade-importadas h2 { margin: 0 0 14px; font-size: var(--fs-lg); font-weight: 600; }
-.grade-importadas ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
-
-.grade-arquivo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 6px 10px 6px 6px;
-    border: 1px solid #3a3a3a;
-    border-radius: 18px;
+    gap: clamp(22px, 1.6vw, 30px);
+    padding: clamp(28px, 1.8vw, 34px) clamp(30px, 2vw, 40px);
+    border-radius: 26px;
+    border: 1px solid var(--line);
     background: linear-gradient(160deg, #2c2c2c, #0e0e0e 85%);
+    box-shadow: 0 0 34px rgba(255, 255, 255, 0.07);
     transition: border-color 0.15s;
 }
-.grade-arquivo.is-ativo { border-color: #fff; box-shadow: 0 0 24px rgba(255, 255, 255, 0.18); }
+.gr-card:hover,
+.gr-card:focus-within { border-color: #666; }
 
-.grade-arquivo__main {
-    flex: 1;
-    min-width: 0;
+/* cabeçalho do card: nome do professor + semestre em destaque */
+.gr-head {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 14px;
-    padding: 10px 12px;
-    border: 0;
-    border-radius: 14px;
-    background: transparent;
-    color: #fff;
-    font-size: var(--fs);
-    text-align: left;
-    cursor: pointer;
+    justify-content: space-between;
+    gap: 14px 24px;
+    padding-bottom: clamp(18px, 1.4vw, 24px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.16);
 }
-.grade-arquivo__main svg { flex: none; width: 24px; height: 24px; }
-.grade-arquivo__nome { flex: 1; min-width: 0; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.grade-arquivo__meta { flex: none; color: #b5b5b5; font-weight: 300; }
-
-.grade-arquivo__abrir {
+.gr-title {
+    flex: 1 1 320px;
+    min-width: 0;
+    margin: 0;
+    font-size: clamp(22px, 2vw, 32px);
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: 0.01em;
+    color: #fff;
+    overflow-wrap: anywhere;
+}
+.gr-semestre {
     flex: none;
-    padding: 8px 16px;
-    border-radius: 999px;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px clamp(18px, 1.6vw, 28px);
+    border-radius: 18px;
     background: var(--pill);
     color: #111;
-    font-size: calc(var(--fs) - 1px);
-    font-weight: 500;
-    text-decoration: none;
+    font-size: clamp(20px, 1.8vw, 30px);
+    font-weight: 600;
+    line-height: 1.15;
+    white-space: nowrap;
 }
-.grade-arquivo__remover {
-    flex: none;
-    width: 34px;
-    height: 34px;
-    border: 0;
-    border-radius: 50%;
-    background: transparent;
-    color: #fff;
-    font-size: 24px;
-    line-height: 1;
-    cursor: pointer;
-}
-.grade-arquivo__remover:hover { background: #2a2a2a; }
-.grade-arquivo__main:focus-visible,
-.grade-arquivo__abrir:focus-visible,
-.grade-arquivo__remover:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-.grade-arquivo-vazio { color: #b5b5b5; font-size: var(--fs); font-weight: 300; }
+.gr-semestre small { font-size: calc(var(--fs) - 2px); font-weight: 400; color: #444; letter-spacing: 0.04em; text-transform: uppercase; }
 
-.grade-origem { margin: -8px 0 16px; color: #b5b5b5; font-size: var(--fs); font-weight: 300; overflow-wrap: anywhere; }
+.gr-info { display: grid; gap: clamp(18px, 1.4vw, 26px); }
+
+.gr-row { display: flex; flex-wrap: wrap; gap: 14px clamp(30px, 2.2vw, 44px); align-items: baseline; }
+.gr-row--wide { column-gap: clamp(40px, 4vw, 60px); }
+.gr-field { font-size: var(--fs); font-weight: 300; color: var(--muted); overflow-wrap: anywhere; }
+.gr-field b { font-weight: 600; color: #fff; margin-right: 6px; }
+.gr-field--title b { color: #cfcfcf; }
+
+.gr-actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: flex-end; }
+
+.gr-empty { margin-top: 60px; text-align: center; color: var(--muted); font-weight: 300; font-size: var(--fs); }
+
+.gr-toast {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 18px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: #151515;
+    color: #e6e6e6;
+    font-size: var(--fs);
+    font-weight: 300;
+}
+.gr-toast button { flex: none; border: 0; background: transparent; color: #fff; font-size: 22px; line-height: 1; cursor: pointer; }
+
+/* ---------- modal: navegação entre grades ---------- */
+.gr-nav { display: flex; align-items: center; gap: 12px; margin-right: auto; }
+.gr-nav-count { min-width: 64px; text-align: center; color: var(--muted); font-size: var(--fs); }
+.gr-nav .action-btn:disabled,
+.modal-foot .action-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+
+/* ---------- modal: editar ---------- */
+.gr-foot-spacer { flex: 1; }
+.action-btn.gr-danger { border-color: #7a2e2e; color: #ffb4b4; }
+.action-btn.gr-danger:hover { border-color: #ff7b7b; }
+.modal .form-grid input[type="date"] { color-scheme: dark; }
+
+/* ---------- modal: importar ---------- */
+.gr-drop {
+    display: grid;
+    justify-items: center;
+    gap: 6px;
+    padding: 36px 20px;
+    border: 2px dashed #555;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.03);
+    color: #fff;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+}
+.gr-drop:hover,
+.gr-drop.is-over,
+.gr-drop:focus-within { border-color: #fff; background: rgba(255, 255, 255, 0.07); }
+.gr-drop svg { width: 34px; height: 34px; margin-bottom: 6px; }
+.gr-drop strong { font-size: var(--fs-lg); font-weight: 500; }
+.gr-drop span { color: var(--muted); font-size: var(--fs); font-weight: 300; }
+.gr-drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+
+.gr-files { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.gr-files li { display: flex; align-items: center; gap: 12px; padding: 8px 10px 8px 14px; border: 1px solid var(--line); border-radius: 14px; background: #161616; }
+.gr-files svg { flex: none; width: 22px; height: 22px; }
+.gr-files-nome { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs); }
+.gr-files button { flex: none; width: 30px; height: 30px; border: 0; border-radius: 50%; background: transparent; color: #fff; font-size: 22px; line-height: 1; cursor: pointer; }
+.gr-files button:hover { background: #2a2a2a; }
+.gr-aviso { margin: 0; color: var(--muted); font-size: calc(var(--fs) - 1px); font-weight: 300; }
 
 @media (max-width: 640px) {
-    .grade-arquivo { flex-wrap: wrap; }
-    .grade-arquivo__main { flex-basis: 100%; flex-wrap: wrap; row-gap: 4px; }
-    .grade-arquivo__nome { flex-basis: calc(100% - 40px); }
+    .gr-actions { justify-content: stretch; }
+    .gr-actions .action-btn { flex: 1; }
+    .gr-head { gap: 12px; }
+    .gr-title { flex-basis: 100%; }
+    .gr-semestre { flex-direction: row; gap: 8px; align-items: baseline; padding: 6px 16px; border-radius: 999px; }
 }
+
+/* ---------- modal "Ver grade" responsivo ---------- */
+.modal--wide .modal-head h2 { overflow-wrap: anywhere; }
+.modal--wide .modal-body { overscroll-behavior: contain; }
+
+@media (max-width: 1100px) {
+    .modal.modal--wide { width: 100%; }
+}
+@media (max-width: 640px) {
+    /* tela cheia: o documento é longo e precisa de toda a área */
+    .modal-overlay:has(.modal--wide) { padding: 0; align-items: stretch; }
+    .modal.modal--wide { width: 100%; height: 100dvh; max-height: 100dvh; border-radius: 0; border: 0; }
+    .modal--wide .modal-head { padding: 18px 16px 4px; }
+    .modal--wide .modal-body { padding: 12px 16px 16px; }
+
+    /* rodapé: setas lado a lado e "Fechar" embaixo, sem estourar a largura */
+    .modal--wide .modal-foot { flex-direction: column; align-items: stretch; gap: 10px; padding: 12px 16px calc(14px + env(safe-area-inset-bottom, 0px)); }
+    .modal--wide .modal-foot .action-btn { width: auto; }
+    .modal--wide .gr-nav { order: 1; width: 100%; margin: 0; gap: 8px; }
+    .modal--wide .gr-nav .action-btn { flex: 1; padding: 0 10px; }
+    .modal--wide .gr-nav-count { flex: none; min-width: 52px; }
+    .modal--wide .modal-foot > .action-btn { order: 2; width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { .gr-card, .gr-drop { transition: none; } }

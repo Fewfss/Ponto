@@ -99,6 +99,11 @@
     outline-offset: 2px;
 }
 
+/* botões Limpar / Aplicar */
+.filtro-actions { flex: none; display: flex; gap: 12px; padding: 4px 2px 14px; }
+.filtro-actions .action-btn { flex: 1; }
+.filtro-field input[type="date"] { color-scheme: light; }
+
 /* logo: caixa pequena em fluxo + conteúdo escalado posicionado dentro dela */
 .filtro-logo {
     flex: none;

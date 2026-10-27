@@ -1,14 +1,25 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import useDialogA11y from "../../hooks/useDialogA11y.js";
 import Logo from "./Logo.jsx";
+import ActionButton from "./ActionButton.jsx";
 import { IconFilter } from "./Icons.jsx";
 import "../styles/Filtro.css";
 
-const SEMESTRES = [1, 2, 3, 4, 5, 6];
+export const FILTRO_VAZIO = { inicio: "", fim: "", semestre: "", curso: "", periodo: "", status: "" };
 
-function Filtro({ onClose }) {
+function Filtro({ valores = FILTRO_VAZIO, opcoes = {}, onAplicar, onClose }) {
     const painelRef = useRef(null);
+    const [rascunho, setRascunho] = useState(valores);
     useDialogA11y(painelRef, onClose);
+
+    const set = (k) => (e) => setRascunho((r) => ({ ...r, [k]: e.target.value }));
+    const { semestres = [], cursos = [], periodos = [], statuses = [] } = opcoes;
+
+    const aplicar = (e) => {
+        e.preventDefault();
+        onAplicar?.(rascunho);
+        onClose();
+    };
 
     return (
         <div className="filtro-overlay" onMouseDown={onClose}>
@@ -23,53 +34,54 @@ function Filtro({ onClose }) {
                     Filtros
                 </h1>
 
-                <form className="filtro-fields" onSubmit={(e) => e.preventDefault()}>
+                <form id="filtro-form" className="filtro-fields" onSubmit={aplicar}>
                     <label className="filtro-field">
-                        <span>Validade início</span>
-                        <input type="date" name="validadeInicio" />
+                        <span>Vigente a partir de</span>
+                        <input type="date" value={rascunho.inicio} onChange={set("inicio")} />
                     </label>
 
                     <label className="filtro-field">
-                        <span>Validade fim</span>
-                        <input type="date" name="validadeFim" />
+                        <span>Vigente até</span>
+                        <input type="date" value={rascunho.fim} onChange={set("fim")} />
                     </label>
 
                     <label className="filtro-field">
                         <span>Semestre</span>
-                        <select name="semestre" defaultValue="">
+                        <select value={rascunho.semestre} onChange={set("semestre")}>
                             <option value="">Todos os semestres</option>
-                            {SEMESTRES.map((s) => (
-                                <option key={s} value={s}>{s}º semestre</option>
-                            ))}
+                            {semestres.map((s) => <option key={s} value={s}>{s}</option>)}
                         </select>
                     </label>
 
                     <label className="filtro-field">
                         <span>Curso</span>
-                        <select name="curso" defaultValue="">
+                        <select value={rascunho.curso} onChange={set("curso")}>
                             <option value="">Todos os cursos</option>
+                            {cursos.map((c) => <option key={c} value={c}>{c}</option>)}
                         </select>
                     </label>
 
                     <label className="filtro-field">
                         <span>Período</span>
-                        <select name="periodo" defaultValue="">
+                        <select value={rascunho.periodo} onChange={set("periodo")}>
                             <option value="">Todos os períodos</option>
-                            <option value="matutino">Matutino</option>
-                            <option value="vespertino">Vespertino</option>
-                            <option value="noturno">Noturno</option>
+                            {periodos.map((p) => <option key={p} value={p}>{p}</option>)}
                         </select>
                     </label>
 
                     <label className="filtro-field">
                         <span>Status</span>
-                        <select name="status" defaultValue="">
+                        <select value={rascunho.status} onChange={set("status")}>
                             <option value="">Todos os status</option>
-                            <option value="ativa">Ativa</option>
-                            <option value="inativa">Inativa</option>
+                            {statuses.map((s) => <option key={s} value={s}>{s}</option>)}
                         </select>
                     </label>
                 </form>
+
+                <div className="filtro-actions">
+                    <ActionButton onClick={() => setRascunho(FILTRO_VAZIO)}>Limpar</ActionButton>
+                    <ActionButton variant="light" type="submit" form="filtro-form">Aplicar</ActionButton>
+                </div>
 
                 <div className="filtro-logo">
                     <div className="filtro-logo-scale">

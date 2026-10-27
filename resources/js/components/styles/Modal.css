@@ -42,6 +42,8 @@
     border-top: 1px solid #3a3a3a;
 }
 
+.modal.modal--wide { width: min(1180px, 100%); }
+
 /* ---------- formulário ---------- */
 .form-group { display: grid; gap: 12px; min-width: 0; }
 .form-group h3 { margin: 0; font-size: var(--fs); font-weight: 500; color: #bdbdbd; }

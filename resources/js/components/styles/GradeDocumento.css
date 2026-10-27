@@ -1,0 +1,124 @@
+/* Documento da grade (reproduz o PDF). Usado dentro do modal "Ver grade". */
+.gd { display: grid; gap: 22px; min-width: 0; color: #f5f5f5; font-size: var(--fs); }
+
+.gd-unidade { margin: 0; text-align: center; font-size: var(--fs-lg); font-weight: 600; }
+.gd-secao { margin: 0 0 10px; font-size: var(--fs); font-weight: 600; color: #cfcfcf; letter-spacing: 0.02em; }
+
+/* cabeçalho */
+.gd-dados { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 0; }
+.gd-dados > div { min-width: 0; padding: 10px 14px; border: 1px solid rgba(255, 255, 255, 0.13); border-radius: 12px; background: rgba(0, 0, 0, 0.24); }
+.gd-dados .gd-nome { grid-column: span 2; }
+.gd-dados dt { margin-bottom: 4px; color: #b5b5b5; font-size: calc(var(--fs) - 2px); }
+.gd-dados dd { margin: 0; font-weight: 500; overflow-wrap: anywhere; }
+
+/* tabelas */
+.gd-scroll { width: 100%; overflow-x: auto; }
+.gd-table { width: 100%; border-collapse: collapse; font-size: calc(var(--fs) - 1px); }
+.gd-table th,
+.gd-table td { padding: 9px 12px; border: 1px solid rgba(255, 255, 255, 0.16); text-align: left; vertical-align: top; }
+.gd-table thead th,
+.gd-table tfoot th { background: rgba(255, 255, 255, 0.07); font-weight: 600; color: #fff; }
+.gd-table tfoot td,
+.gd-table tfoot th { font-weight: 600; }
+.gd-horas { min-width: 560px; }
+.gd-horas td:last-child,
+.gd-horas th:last-child { text-align: center; width: 70px; }
+
+.gd-status { display: inline-block; padding: 2px 10px; border-radius: 999px; background: #173c26; color: #9de3b2; font-size: calc(var(--fs) - 2px); }
+
+/* quadro semanal */
+.gd-semana-tabela { display: grid; gap: 14px; }
+.gd-periodo { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px; align-items: stretch; }
+.gd-periodo-titulo {
+    margin: 0;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.07);
+    font-size: calc(var(--fs) - 2px);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+}
+.gd-week { table-layout: fixed; min-width: 720px; }
+.gd-week thead th { text-align: center; }
+.gd-week td { height: 72px; padding: 6px; }
+
+.gd-slot {
+    display: grid;
+    gap: 2px;
+    justify-items: center;
+    padding: 7px 6px;
+    border-radius: 10px;
+    border: 1px solid #fff;
+    background: linear-gradient(145deg, #fff 0%, #dedede 100%);
+    color: #171717;
+    font-size: calc(var(--fs) - 3px);
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+.gd-slot + .gd-slot { margin-top: 8px; }
+.gd-slot strong { font-size: calc(var(--fs) - 2px); }
+.gd-slot-time { font-weight: 600; white-space: nowrap; }
+.gd-slot-mat { text-decoration: underline; text-decoration-color: #9bb37a; text-underline-offset: 3px; }
+
+/* celular: lista por dia */
+.gd-days { display: none; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.gd-day { min-width: 0; padding: 14px; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 14px; background: rgba(0, 0, 0, 0.2); }
+.gd-day h3 { margin: 0 0 10px; font-size: var(--fs-lg); font-weight: 600; }
+.gd-day-item { display: grid; grid-template-columns: minmax(84px, 30%) minmax(0, 1fr); gap: 10px; align-items: stretch; }
+.gd-day-item + .gd-day-item { margin-top: 8px; }
+.gd-day-when { display: flex; flex-direction: column; justify-content: center; gap: 3px; }
+.gd-day-when span { color: #c0c0c0; font-size: calc(var(--fs) - 2px); }
+.gd-empty { margin: 0; color: #9a9a9a; font-size: calc(var(--fs) - 1px); }
+
+/* HAE-RJI + totais */
+.gd-rodape-tabelas { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.gd-hae thead th:last-child { width: 120px; }
+.gd-hae .gd-n { width: 40px; text-align: center; color: #b5b5b5; }
+.gd-totais th[scope="row"] { text-align: right; }
+
+/* assinaturas */
+.gd-assinaturas { padding-top: 18px; border-top: 1px solid rgba(255, 255, 255, 0.18); }
+.gd-ass-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 28px; }
+.gd-ass { display: grid; gap: 4px; padding-top: 22px; border-top: 1px solid rgba(255, 255, 255, 0.35); font-size: calc(var(--fs) - 1px); }
+.gd-ass b { font-weight: 600; }
+.gd-ass-data { color: #bdbdbd; }
+.gd-ass-funcao { color: #9a9a9a; }
+.gd-obs { margin: 22px 0 0; min-height: 48px; font-size: calc(var(--fs) - 1px); color: #bdbdbd; }
+.gd-obs b { color: #fff; font-weight: 600; }
+
+@media (max-width: 900px) {
+    .gd-dados { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .gd-semana-tabela { display: none; }
+    .gd-days { display: grid; }
+    .gd-rodape-tabelas { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 640px) {
+    .gd-ass-grid { grid-template-columns: minmax(0, 1fr); }
+
+    /* Horas Aulas: cada disciplina vira um bloco com rótulo: valor (sem rolagem lateral) */
+    .gd-horas { min-width: 0; }
+    .gd-horas thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+    .gd-horas,
+    .gd-horas tbody,
+    .gd-horas tr,
+    .gd-horas td { display: block; width: auto; }
+    .gd-horas tr { margin-bottom: 10px; border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 12px; overflow: hidden; background: rgba(0, 0, 0, 0.2); }
+    .gd-horas td { display: flex; justify-content: space-between; gap: 16px; padding: 8px 12px; border: 0; border-top: 1px solid rgba(255, 255, 255, 0.08); text-align: right !important; }
+    .gd-horas td::before { content: attr(data-label); flex: none; color: #b5b5b5; text-align: left; }
+    .gd-horas td:last-child { width: auto; }
+    .gd-horas td.gd-disciplina { border-top: 0; background: rgba(255, 255, 255, 0.07); font-weight: 600; }
+    .gd-horas td.gd-disciplina::before { display: none; }
+
+    /* HAE-RJI e resumo: fonte menor e sem largura fixa que force rolagem */
+    .gd-hae thead th:last-child { width: 84px; }
+    .gd-table th, .gd-table td { padding: 8px 10px; }
+}
+@media (max-width: 340px) {
+    .gd-dados { grid-template-columns: minmax(0, 1fr); }
+    .gd-dados .gd-nome { grid-column: auto; }
+}
