@@ -13,3 +13,9 @@ Route::get('/grade-horaria', function () {
 Route::get('/folha', function () {
     return Inertia::render('Folha');
 });
+Route::get('/pesquisa', function () {
+    return Inertia::render('Pesquisa');
+});
+Route::get('/time', function () {
+    return Inertia::render('Equipe');
+});
