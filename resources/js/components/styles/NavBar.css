@@ -1,5 +1,4 @@
 .navbar {
-    /* 100% (e não 100vw): o 100vw inclui a barra de rolagem vertical e gerava rolagem horizontal */
     width: 100%;
     height: clamp(80px, 10vw, 120px);
 
@@ -8,7 +7,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-
     position: relative;
 }
 .navbar-logo a,

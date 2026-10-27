@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Head } from "@inertiajs/react";
-import NavBar from "../components/items/NavBar.jsx";
-import Footer from "../components/items/Footer.jsx";
+import NavBar from "../components/items/NavBar.jsx"; 
 import "../components/styles/Equipe.css";
 
 /*
@@ -130,7 +129,6 @@ export default function Equipe() {
         </section>
       </main>
 
-      <Footer />
     </div>
   );
 }

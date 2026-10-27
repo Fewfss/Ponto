@@ -6,8 +6,7 @@ import Toolbar from "../components/items/Toolbar.jsx";
 import SearchBar from "../components/items/SearchBar.jsx";
 import FilterButton from "../components/items/FilterButton.jsx";
 import ActionButton from "../components/items/ActionButton.jsx";
-import { IconImport } from "../components/items/Icons.jsx";
-import Footer from "../components/items/Footer.jsx";
+import { IconImport } from "../components/items/Icons.jsx"; 
 import "../components/styles/Grade.css";
 
 const PERIODOS = [
@@ -153,7 +152,6 @@ const Grade = () => {
 
 
             </main>
-            <Footer />
         </div>
     );
 };

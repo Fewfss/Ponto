@@ -2,7 +2,6 @@ import CardAvaliacao from "../components/items/CardAvaliacao";
 import "../components/styles/Pesquisa.css";
 import "../components/items/NavBar.jsx";
 import NavBar from "../components/items/NavBar.jsx";
-import Footer from "../components/items/Footer.jsx";
 
 export default function Pesquisa() {
   async function handleSubmit({ nota, comentario }) {
@@ -10,16 +9,12 @@ export default function Pesquisa() {
   }
 
   return (
-    <div className="avaliacao-page">
-      <header className="avaliacao-header">
-        <NavBar/>
-      </header>
-
+      <div className="avaliacao-page">
+          <NavBar/>
       <main className="avaliacao-main">
         <CardAvaliacao onSubmit={handleSubmit} />
       </main>
-      <Footer/>
     </div>
-    
+
   );
 }

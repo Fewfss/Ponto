@@ -16,6 +16,6 @@ Route::get('/folha', function () {
 Route::get('/pesquisa', function () {
     return Inertia::render('Pesquisa');
 });
-Route::get('/time', function () {
+Route::get('/creditos', function () {
     return Inertia::render('Equipe');
 });

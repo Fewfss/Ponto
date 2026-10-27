@@ -86,6 +86,25 @@ function Menu({ onClose }) {
 
                         <span>Gerenciamento de Grades</span>
                     </Link>
+
+                    <Link
+                        href="/pesquisa"
+                        aria-current={atual("/pesquisa")}
+                        className={`menu-option ${
+                            hoveredItem === "folhas" ? "active" : ""
+                        }`}
+                        onMouseEnter={() => setHoveredItem("folhas")}
+                        onClick={onClose}
+                    >
+                        <svg viewBox="0 0 24 24" className="menu-icon" aria-hidden="true">
+                            <circle cx="12" cy="12" r="9" />
+                            <path d="M8.5 10h.01" />
+                            <path d="M15.5 10h.01" />
+                            <path d="M8.5 14a4 4 0 0 0 7 0" />
+                        </svg>
+
+                        <span>Pesquisa de Satisfação</span>
+                    </Link>
                 </nav>
 
                 <div className="menu-logo">
