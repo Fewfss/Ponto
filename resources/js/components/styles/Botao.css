@@ -21,7 +21,6 @@
   letter-spacing: -0.02em;
   color: #000;
 
-  /* gradiente linear levemente na diagonal (80deg) */
   background: linear-gradient(80deg, var(--bg-from) 30%, var(--bg-to) 100%);
   background-size: 100% 100%;
 
@@ -37,7 +36,6 @@
   z-index: 2;
 }
 
-/* brilho que varre o botão no hover (efeito de foco) */
 .bg-btn::before {
   content: "";
   position: absolute;
@@ -54,9 +52,9 @@
   background-size: 250% 100%;
   background-position: 130% 0;
   opacity: 0;
+  transition: opacity 0.5s ease;
 }
 
-/* anel de foco pulsante */
 .bg-btn::after {
   content: "";
   position: absolute;
@@ -68,7 +66,6 @@
   opacity: 0;
 }
 
-/* ponto branco: em repouso fica no canto superior direito */
 .bg-btn__dot {
   position: absolute;
   top: 0;
@@ -84,7 +81,8 @@
   offset-path: inset(0 round 9999px);
   offset-rotate: 0deg;
   offset-anchor: 50% 50%;
-  offset-distance: var(--bg-start, 78%);
+  offset-distance: calc(var(--bg-start, 78%) + 100%);
+  transition: box-shadow 0.5s ease;
 }
 
 .bg-btn:hover,
@@ -97,14 +95,14 @@
   outline: none;
 }
 
-.bg-btn:hover::before,
-.bg-btn:focus-visible::before {
+/* Estas três são ligadas/desligadas pelo Botao.jsx (classes is-pulsing / is-orbiting) para que a
+   saída do hover seja suave: o anel termina a ondinha, a bolinha desacelera até o repouso. */
+.bg-btn.is-pulsing::before {
   opacity: 1;
-  animation: bg-sheen 1.1s ease-out;
+  animation: bg-sheen 1.1s ease-out forwards;
 }
 
-.bg-btn:hover::after,
-.bg-btn:focus-visible::after {
+.bg-btn.is-pulsing::after {
   animation: bg-ring 1.4s ease-out infinite;
 }
 
@@ -113,7 +111,10 @@
   box-shadow:
     0 0 10px 3px rgba(255, 255, 255, 0.9),
     0 0 22px 6px rgba(255, 255, 255, 0.45);
-  animation: bg-orbit var(--bg-orbit-time) linear infinite;
+}
+
+.bg-btn.is-orbiting .bg-btn__dot {
+  animation: bg-orbit var(--bg-orbit-time) linear var(--bg-orbit-delay, 0ms) infinite;
 }
 
 .bg-btn:active {

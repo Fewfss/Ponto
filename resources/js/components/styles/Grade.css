@@ -12,12 +12,15 @@
     margin: 0 auto;
     padding: clamp(32px, 2.4vw, 44px) var(--page-pad) 72px;
     display: grid;
+    /* minmax(0, 1fr): sem isso a coluna cresce até caber o conteúdo mais largo (a tabela) e a página inteira vaza para o lado */
+    grid-template-columns: minmax(0, 1fr);
     gap: clamp(24px, 2vw, 36px);
     box-sizing: border-box;
 }
 
 .div-container-table {
     width: 100%;
+    min-width: 0;
     padding: clamp(24px, 2vw, 36px);
     border: 1px solid #454545;
     border-radius: 26px;
@@ -103,6 +106,8 @@
     text-align: center;
 }
 .planner-class strong { font-size: calc(var(--fs) - 1px); }
+.planner-class strong,
+.planner-class span { max-width: 100%; overflow-wrap: anywhere; }
 .planner-class-time {
     display: flex;
     align-items: center;
@@ -122,6 +127,44 @@
     stroke-width: 1.8;
     stroke-linecap: round;
     stroke-linejoin: round;
+}
+
+/* ---------- grade por dia (telas pequenas) ---------- */
+.planner-days {
+    display: none;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.planner-day {
+    min-width: 0;
+    padding: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    background: rgba(0, 0, 0, 0.2);
+}
+.planner-day h3 { margin: 0 0 12px; font-size: var(--fs-lg); font-weight: 600; color: #fff; }
+.planner-day-item { display: grid; grid-template-columns: minmax(84px, 30%) minmax(0, 1fr); gap: 12px; align-items: stretch; }
+.planner-day-item + .planner-day-item { margin-top: 10px; }
+.planner-day-when { display: flex; flex-direction: column; justify-content: center; gap: 4px; color: #f5f5f5; font-size: var(--fs); }
+.planner-day-when span { color: #c0c0c0; font-size: calc(var(--fs) - 2px); }
+.planner-day-empty { margin: 0; color: #9a9a9a; font-size: calc(var(--fs) - 1px); }
+
+/* notebook pequeno / tablet deitado: a coluna "Período" já mostra o horário, então tiramos o relógio do cartão para caber */
+@media (max-width: 1100px) {
+    .grade-planner { border-spacing: 6px; }
+    .grade-planner thead th:first-child { width: 96px; }
+    .grade-planner .planner-class-time { display: none; }
+}
+
+/* tablet em pé e celular: tabela vira uma lista de cartões por dia */
+@media (max-width: 900px) {
+    .grade-data-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .class-data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grade-planner-scroll { display: none; }
+    .planner-days { display: grid; }
 }
 
 @media (max-width: 640px) {
