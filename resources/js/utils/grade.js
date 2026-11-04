@@ -39,6 +39,19 @@ export const HAE_RJI = [
 // O PDF traz a unidade no cabeçalho, mas o back ainda não a extrai/guarda.
 export const UNIDADE_PADRAO = "111 - Faculdade de Tecnologia da Zona Leste";
 
+// Texto fixo do cabeçalho do modelo .docx da folha de ponto (não é gerado pelo back).
+export const FOLHA_FIXOS = {
+    unidade: "FATEC ZONA LESTE",
+    cidade: "SÃO PAULO",
+    cod: "265",
+    comprovantes: "VIDE GRADE HORÁRIA",
+};
+
+export const MESES = [
+    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+];
+
 /* ---------- helpers de exibição ---------- */
 export const dataBR = (iso) => (iso ? iso.split("-").reverse().join("/") : "—");
 
@@ -95,6 +108,11 @@ export function adaptarGrade(g) {
         nome: professor.nome ?? "",
         cpf: professor.cpf ?? "",
         contrato: professor.regime_juridico ?? "",
+        categoria: professor.categoria ?? "",
+        horaAulaSemanal: g.hora_aula_semanal == null ? "" : String(g.hora_aula_semanal),
+        horaAtividade: g.hora_atividade ?? "",
+        haeProjeto: g.hae_projeto ?? "",
+        haeCoordenacao: g.hae_coordenacao ?? "",
         componentes,
         aulas,
         haeRji: {},
@@ -103,4 +121,47 @@ export function adaptarGrade(g) {
             chefes: cursos.map((curso) => ({ nome: "", funcao: `Chefe de Depto/Coordenador ${curso}` })),
         },
     };
+}
+
+/* ---------- UI → API (edição) ---------- */
+const texto = (v) => String(v ?? "").trim();
+const nulo = (v) => (texto(v) === "" ? null : texto(v));
+const mudou = (original, form, campos) => campos.some((k) => texto(original[k]) !== texto(form[k]));
+
+/**
+ * Compara o formulário com a grade original e devolve só o que precisa ser enviado:
+ *   { professor: payload | null, grade: payload | null }
+ * (professor → PATCH /professores/{id}; grade → PATCH /grades-horarias/{id}).
+ * Lança Error com mensagem amigável se algum valor for inválido.
+ */
+export function alteracoes(original, form) {
+    const professor = mudou(original, form, ["nome", "matricula", "cpf", "contrato", "categoria"])
+        ? {
+            nome: texto(form.nome),
+            matricula: texto(form.matricula),
+            cpf: nulo(form.cpf),
+            regime_juridico: nulo(form.contrato),
+            categoria: nulo(form.categoria),
+        }
+        : null;
+
+    const grade = {};
+    // validade_fim usa "after_or_equal:validade_inicio" no back: as três vão sempre juntas.
+    if (mudou(original, form, ["semestre", "validadeInicio", "validadeFim"])) {
+        Object.assign(grade, {
+            semestre: nulo(form.semestre),
+            validade_inicio: nulo(form.validadeInicio),
+            validade_fim: nulo(form.validadeFim),
+        });
+    }
+    if (mudou(original, form, ["horaAulaSemanal"])) {
+        const n = nulo(form.horaAulaSemanal);
+        if (n !== null && !/^\d+$/.test(n)) throw new Error("Hora-aula semanal deve ser um número inteiro.");
+        grade.hora_aula_semanal = n === null ? null : Number(n);
+    }
+    if (mudou(original, form, ["horaAtividade"])) grade.hora_atividade = nulo(form.horaAtividade);
+    if (mudou(original, form, ["haeProjeto"])) grade.hae_projeto = nulo(form.haeProjeto);
+    if (mudou(original, form, ["haeCoordenacao"])) grade.hae_coordenacao = nulo(form.haeCoordenacao);
+
+    return { professor, grade: Object.keys(grade).length ? grade : null };
 }

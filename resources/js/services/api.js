@@ -78,3 +78,22 @@ export const professoresApi = {
     /** PATCH /api/professores/{id}  { nome, matricula, cpf, regime_juridico, categoria } */
     atualizar: (id, dados) => request(`/professores/${id}`, { method: "PATCH", json: dados }),
 };
+
+/* ---------------- folhas de ponto ---------------- */
+export const folhasApi = {
+    /**
+     * POST /api/professores/{id}/folhas-ponto
+     * dados: { mes (1-12), ano, grade_horaria_id, formato: "docx" | "pdf" }
+     * Devolve { folha_ponto, download_url } — download_url é relativa e baixa o arquivo.
+     */
+    gerar: (professorId, dados) => request(`/professores/${professorId}/folhas-ponto`, { method: "POST", json: dados }),
+};
+
+/**
+ * Aplica o resultado de `alteracoes()` (utils/grade.js): professor e grade são endpoints
+ * separados, então cada um só é chamado se houve mudança nele.
+ */
+export async function aplicarAlteracoes(original, { professor, grade }) {
+    if (professor) await professoresApi.atualizar(original.professorId, professor);
+    if (grade) await gradesApi.atualizar(original.id, grade);
+}

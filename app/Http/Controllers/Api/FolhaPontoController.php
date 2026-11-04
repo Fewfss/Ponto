@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\FolhaPonto;
 use App\Models\Professor;
 use App\Services\FolhaPonto\FolhaPontoGenerator;
 use Illuminate\Http\Request;
@@ -36,14 +37,30 @@ class FolhaPontoController extends Controller
 
         if ($formato === 'pdf') {
             $folha = $this->folhaPontoGenerator->converterParaPdf($folha);
-            $urlDownload = Storage::url($folha->arquivo_gerado_pdf);
-        } else {
-            $urlDownload = Storage::url($folha->arquivo_gerado);
         }
 
         return response()->json([
             'folha_ponto' => $folha,
-            'download_url' => $urlDownload,
+            'download_url' => route('folhas-ponto.download', [
+                'folhaPonto' => $folha->id,
+                'formato' => $formato,
+            ], false),
         ], 201);
+    }
+
+    public function download(Request $request, FolhaPonto $folhaPonto)
+    {
+        $formato = $request->query('formato', 'docx');
+        abort_unless(in_array($formato, ['docx', 'pdf'], true), 422, 'Formato inválido (use docx ou pdf).');
+
+        $caminho = $formato === 'pdf' ? $folhaPonto->arquivo_gerado_pdf : $folhaPonto->arquivo_gerado;
+
+        abort_if(
+            ! $caminho || ! Storage::exists($caminho),
+            404,
+            'Arquivo não encontrado. Gere a folha de ponto novamente.'
+        );
+
+        return Storage::download($caminho, basename($caminho));
     }
 }

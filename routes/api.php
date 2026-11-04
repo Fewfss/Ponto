@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Route;
 Route::post('/grades', [GradeImportController::class, 'store']);
 
 Route::post('/professores/{professor}/folhas-ponto', [FolhaPontoController::class, 'store']);
+Route::get('/folhas-ponto/{folhaPonto}/download', [FolhaPontoController::class, 'download'])
+    ->name('folhas-ponto.download');
 
 // rotas para consulta e edição de dados já importados
 

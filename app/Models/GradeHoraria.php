@@ -19,6 +19,9 @@ class GradeHoraria extends Model
         'validade_inicio',
         'validade_fim',
         'hora_aula_semanal',
+        'hora_atividade',
+        'hae_projeto',
+        'hae_coordenacao',
         'arquivo_original',
         'dados_brutos',
     ];

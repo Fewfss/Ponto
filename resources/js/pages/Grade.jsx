@@ -10,8 +10,8 @@ import ActionButton from "../components/items/ActionButton.jsx";
 import GradeDocumento from "../components/items/GradeDocumento.jsx";
 import { IconImport, IconPen, IconFile } from "../components/items/Icons.jsx";
 import useGrades from "../hooks/useGrades.js";
-import { gradesApi, professoresApi } from "../services/api.js";
-import { dataBR, totais, fmtNum } from "../utils/grade.js";
+import { aplicarAlteracoes, gradesApi } from "../services/api.js";
+import { alteracoes, dataBR, totais, fmtNum } from "../utils/grade.js";
 import "../components/styles/Grade.css";
 
 const unicos = (lista) => [...new Set(lista)].filter(Boolean);
@@ -127,11 +127,6 @@ function ModalVer({ lista, indice, onMudar, onClose }) {
 /* ------------------------------------------------------------------
    Helpers de formulário / erro
 ------------------------------------------------------------------- */
-const vazioParaNull = (v) => {
-    const t = String(v ?? "").trim();
-    return t === "" ? null : t;
-};
-
 // Mensagem(ns) para exibir: validação (422) vira lista; o resto, a mensagem do erro.
 const mensagensDoErro = (e) => (e?.detalhes?.length ? e.detalhes : [e?.message || "Algo deu errado. Tente novamente."]);
 
@@ -393,37 +388,24 @@ export default function Grade() {
     const filtrosAtivos = Object.values(filtro).filter(Boolean).length;
     const indiceVer = visiveis.findIndex((g) => g.id === verId);
 
-    // Cabeçalho do professor (PATCH /professores/{id}) e da grade (PATCH /grades-horarias/{id})
-    // são endpoints separados: só chama o que de fato mudou. As datas vão sempre juntas porque
-    // a regra "validade_fim after_or_equal validade_inicio" do back precisa dos dois campos.
+    // Professor (PATCH /professores/{id}) e grade (PATCH /grades-horarias/{id}) são endpoints
+    // separados: `alteracoes` calcula o que mudou e só isso é enviado.
     const salvar = async (original, form) => {
-        const mudou = (campos) => campos.some((k) => (original[k] ?? "") !== (form[k] ?? ""));
-        const professorMudou = mudou(["nome", "matricula", "cpf", "contrato"]);
-        const gradeMudou = mudou(["semestre", "validadeInicio", "validadeFim"]);
+        const mudancas = alteracoes(original, form);
+        if (!mudancas.professor && !mudancas.grade) {
+            setEditando(null);
+            return;
+        }
 
         try {
-            if (professorMudou) {
-                await professoresApi.atualizar(original.professorId, {
-                    nome: form.nome.trim(),
-                    matricula: form.matricula.trim(),
-                    cpf: vazioParaNull(form.cpf),
-                    regime_juridico: vazioParaNull(form.contrato),
-                });
-            }
-            if (gradeMudou) {
-                await gradesApi.atualizar(original.id, {
-                    semestre: vazioParaNull(form.semestre),
-                    validade_inicio: vazioParaNull(form.validadeInicio),
-                    validade_fim: vazioParaNull(form.validadeFim),
-                });
-            }
+            await aplicarAlteracoes(original, mudancas);
         } finally {
             // recarrega tudo (também em falha parcial): o professor pode ter várias grades na lista
-            if (professorMudou || gradeMudou) await recarregar({ silencioso: true });
+            await recarregar({ silencioso: true });
         }
 
         setEditando(null);
-        setAviso(professorMudou || gradeMudou ? "Alterações salvas." : "");
+        setAviso("Alterações salvas.");
     };
 
     const excluir = async (id) => {

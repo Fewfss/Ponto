@@ -6,54 +6,20 @@ import Toolbar from "../components/items/Toolbar.jsx";
 import SearchBar from "../components/items/SearchBar.jsx";
 import FilterButton from "../components/items/FilterButton.jsx";
 import ActionButton from "../components/items/ActionButton.jsx";
-import { IconNewDoc, IconPen } from "../components/items/Icons.jsx"; 
+import { IconNewDoc, IconPen } from "../components/items/Icons.jsx";
+import useGrades from "../hooks/useGrades.js";
+import { aplicarAlteracoes, folhasApi } from "../services/api.js";
+import { alteracoes, dataBR, FOLHA_FIXOS, MESES } from "../utils/grade.js";
 import "../components/styles/Folha.css";
 
-//Sem integração ao backend(vai ter q mudar dps pra colocar os fetch)
-const GRADES_INICIAIS = [
-  {
-    id: 1,
-    unidade: "Fatec Zona Leste",
-    cidade: "São Paulo",
-    cod: "111",
-    professor: "Katia Montreal Martinex",
-    matricula: "1928374",
-    regime: "CLT",
-    categoria: "",
-    comprovantes: "VIDE GRADE HORÁRIA",
-    horaAulaSemanal: "",
-    horaAtividade: "",
-    haeProjeto: "",
-    haeCoordenacao: "",
-  },
-  {
-    id: 2,
-    unidade: "Fatec Zona Leste",
-    cidade: "São Paulo",
-    cod: "111",
-    professor: "Marcos Antunes Lopes",
-    matricula: "2039485",
-    regime: "Estatutário",
-    categoria: "Titular",
-    comprovantes: "VIDE GRADE HORÁRIA",
-    horaAulaSemanal: "20",
-    horaAtividade: "4",
-    haeProjeto: "2",
-    haeCoordenacao: "",
-  },
-];
+const TODOS = "Todos";
 
-const REGIMES = ["Todos", "CLT", "Estatutário"];
-
-/* campos do formulário de edição, agrupados: [chave, rótulo, largura ("span2" | "span3")] */
+/* campos do formulário de edição, agrupados: [chave, rótulo, largura ("span2" | "span3")]
+   Unidade, cidade, COD e comprovantes são texto fixo do modelo .docx, por isso não são editáveis. */
 const GRUPOS = [
-  { titulo: "Unidade", campos: [
-    ["unidade", "Unidade"], ["cidade", "Cidade"], ["cod", "COD"],
-  ]},
   { titulo: "Professor(a)", campos: [
-    ["professor", "Professor(a)", "span2"], ["matricula", "Matrícula"],
-    ["regime", "Regime Jurídico"], ["categoria", "Categoria"],
-    ["comprovantes", "Comprovante(s) Curricular(es)"],
+    ["nome", "Professor(a)", "span2"], ["matricula", "Matrícula"],
+    ["contrato", "Regime Jurídico"], ["categoria", "Categoria"],
   ]},
   { titulo: "Carga horária", campos: [
     ["horaAulaSemanal", "Hora-Aula Semanal"], ["horaAtividade", "Hora Atividade"],
@@ -61,11 +27,17 @@ const GRUPOS = [
   ]},
 ];
 
-const MESES = [
-  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
-];
-const DIAS_SEMANA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+// Mensagem(ns) para exibir: validação (422) vira lista; o resto, a mensagem do erro.
+const mensagensDoErro = (e) => (e?.detalhes?.length ? e.detalhes : [e?.message || "Algo deu errado. Tente novamente."]);
+
+function ListaErros({ mensagens }) {
+  if (!mensagens.length) return null;
+  return (
+    <div className="fp-erro" role="alert">
+      {mensagens.map((m) => <p key={m}>{m}</p>)}
+    </div>
+  );
+}
 
 /* ------------------------------------------------------------------
    Card da grade
@@ -79,13 +51,15 @@ function Campo({ label, value, title }) {
   );
 }
 
+const ou = (v) => v || "—";
+
 function GradeCard({ g, selecionada, onSelect, onEdit }) {
   return (
     <article
       className="fp-card"
       tabIndex={0}
       aria-current={selecionada ? "true" : undefined}
-      aria-label={`Grade de ${g.professor}`}
+      aria-label={`Grade de ${g.nome}, semestre ${g.semestre || "sem semestre"}`}
       onClick={() => onSelect(g.id)}
       onKeyDown={(e) => {
         // Enter/Espaço selecionam, mas só quando o foco está no card (não nos botões dentro dele)
@@ -105,47 +79,71 @@ function GradeCard({ g, selecionada, onSelect, onEdit }) {
       </ActionButton>
 
       <div className="fp-row">
-        <Campo label={g.unidade} title />
-        <Campo label="Cidade:" value={g.cidade} />
-        <Campo label="COD:" value={g.cod} />
+        <Campo label={FOLHA_FIXOS.unidade} title />
+        <Campo label="Cidade:" value={FOLHA_FIXOS.cidade} />
+        <Campo label="COD:" value={FOLHA_FIXOS.cod} />
       </div>
       <div className="fp-row">
-        <Campo label="Professor(a):" value={g.professor} />
-        <Campo label="Matrícula:" value={g.matricula} />
-        <Campo label="Regime Jurídico:" value={g.regime} />
-        <Campo label="Categoria:" value={g.categoria} />
+        <Campo label="Professor(a):" value={g.nome} />
+        <Campo label="Matrícula:" value={ou(g.matricula)} />
+        <Campo label="Regime Jurídico:" value={ou(g.contrato)} />
+        <Campo label="Categoria:" value={ou(g.categoria)} />
       </div>
       <div className="fp-row">
-        <Campo label="Comprovante(s) Curricular(es)" value={g.comprovantes} />
-        <Campo label="Hora-Aula Semanal:" value={g.horaAulaSemanal} />
-        <Campo label="Hora Atividade:" value={g.horaAtividade} />
+        <Campo label="Semestre:" value={ou(g.semestre)} />
+        <Campo label="Vigência:" value={`${dataBR(g.validadeInicio)} a ${dataBR(g.validadeFim)}`} />
+      </div>
+      <div className="fp-row">
+        <Campo label="Comprovante(s) Curricular(es)" value={FOLHA_FIXOS.comprovantes} />
+        <Campo label="Hora-Aula Semanal:" value={ou(g.horaAulaSemanal)} />
+        <Campo label="Hora Atividade:" value={ou(g.horaAtividade)} />
       </div>
       <div className="fp-row fp-row--wide">
-        <Campo label="HAE (Projeto/Orientação):" value={g.haeProjeto} />
-        <Campo label="HAE (Coordenação):" value={g.haeCoordenacao} />
+        <Campo label="HAE (Projeto/Orientação):" value={ou(g.haeProjeto)} />
+        <Campo label="HAE (Coordenação):" value={ou(g.haeCoordenacao)} />
       </div>
     </article>
   );
 }
 
 /* ------------------------------------------------------------------
-   Modal: editar grade
+   Modal: editar grade (cabeçalho que entra na folha)
 ------------------------------------------------------------------- */
 function ModalEditar({ grade, onSave, onClose }) {
   const [form, setForm] = useState(grade);
+  const [ocupado, setOcupado] = useState(false);
+  const [erros, setErros] = useState([]);
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
+
+  const salvar = async () => {
+    if (!form.nome.trim() || !form.matricula.trim()) {
+      setErros(["Nome e matrícula são obrigatórios."]);
+      return;
+    }
+    setOcupado(true);
+    setErros([]);
+    try {
+      await onSave(grade, form); // em caso de sucesso o pai fecha o modal
+    } catch (e) {
+      setErros(mensagensDoErro(e));
+      setOcupado(false);
+    }
+  };
 
   return (
     <Modal
       titulo="Editar grade"
-      onClose={onClose}
+      onClose={ocupado ? () => {} : onClose}
       rodape={
         <>
-          <ActionButton onClick={onClose}>Cancelar</ActionButton>
-          <ActionButton variant="light" onClick={() => onSave(form)}>Salvar alterações</ActionButton>
+          <ActionButton disabled={ocupado} onClick={onClose}>Cancelar</ActionButton>
+          <ActionButton variant="light" disabled={ocupado} onClick={salvar}>
+            {ocupado ? "Salvando…" : "Salvar alterações"}
+          </ActionButton>
         </>
       }
     >
+      <ListaErros mensagens={erros} />
       {GRUPOS.map((grupo) => (
         <section className="form-group" key={grupo.titulo}>
           <h3>{grupo.titulo}</h3>
@@ -153,7 +151,7 @@ function ModalEditar({ grade, onSave, onClose }) {
             {grupo.campos.map(([k, label, largura]) => (
               <label key={k} className={largura}>
                 {label}
-                <input value={form[k]} onChange={set(k)} />
+                <input value={form[k] ?? ""} onChange={set(k)} disabled={ocupado} />
               </label>
             ))}
           </div>
@@ -165,91 +163,115 @@ function ModalEditar({ grade, onSave, onClose }) {
 
 /* ------------------------------------------------------------------
    Modal: gerar nova folha de ponto a partir de uma grade
+   POST /api/professores/{id}/folhas-ponto → download_url
 ------------------------------------------------------------------- */
 function ModalGerar({ grades, gradeInicial, onClose }) {
   const hoje = new Date();
   const [gradeId, setGradeId] = useState(gradeInicial ?? grades[0]?.id ?? "");
-  const [mes, setMes] = useState(hoje.getMonth());
+  const [mes, setMes] = useState(hoje.getMonth() + 1); // 1-12, como a API espera
   const [ano, setAno] = useState(hoje.getFullYear());
-  const [folha, setFolha] = useState(null);
+  const [formato, setFormato] = useState("docx");
+  const [gerando, setGerando] = useState(false);
+  const [erros, setErros] = useState([]);
+  const [pronta, setPronta] = useState(null); // { url, formato, nome, mes, ano }
 
-  const gerar = () => {
+  // qualquer mudança nos parâmetros invalida a folha já gerada
+  const alterar = (setter) => (e) => { setter(e.target.value); setPronta(null); setErros([]); };
+
+  const gerar = async () => {
     const g = grades.find((x) => x.id === Number(gradeId));
     if (!g) return;
-    const total = new Date(ano, Number(mes) + 1, 0).getDate();
-    const dias = Array.from({ length: total }, (_, i) => {
-      const d = new Date(ano, Number(mes), i + 1);
-      return { dia: i + 1, sem: DIAS_SEMANA[d.getDay()], fim: d.getDay() === 0 || d.getDay() === 6 };
-    });
-    setFolha({ g, dias });
+    if (!Number.isInteger(Number(ano)) || ano < 2000 || ano > 2100) {
+      setErros(["Informe um ano entre 2000 e 2100."]);
+      return;
+    }
+
+    setGerando(true);
+    setErros([]);
+    setPronta(null);
+    try {
+      const { download_url: url } = await folhasApi.gerar(g.professorId, {
+        mes: Number(mes),
+        ano: Number(ano),
+        grade_horaria_id: g.id,
+        formato,
+      });
+      setPronta({ url, formato, nome: g.nome, mes: Number(mes), ano: Number(ano) });
+    } catch (e) {
+      const msgs = mensagensDoErro(e);
+      if (formato === "pdf") msgs.push("O PDF depende do LibreOffice no servidor. Se não estiver instalado, gere em Word (.docx).");
+      setErros(msgs);
+    } finally {
+      setGerando(false);
+    }
   };
 
   return (
     <Modal
       titulo="Gerar nova folha de ponto"
       descricao="Escolha a grade e o mês de referência."
-      onClose={onClose}
+      onClose={gerando ? () => {} : onClose}
       rodape={
         <>
-          <ActionButton onClick={onClose}>Fechar</ActionButton>
-          {folha && <ActionButton onClick={() => window.print()}>Imprimir</ActionButton>}
-          <ActionButton variant="light" onClick={gerar}>
-            {folha ? "Gerar novamente" : "Gerar folha"}
+          <ActionButton disabled={gerando} onClick={onClose}>Fechar</ActionButton>
+          <ActionButton variant="light" disabled={gerando || grades.length === 0} onClick={gerar}>
+            {gerando ? "Gerando…" : pronta ? "Gerar novamente" : "Gerar folha"}
           </ActionButton>
         </>
       }
     >
-      <div className="form-grid">
-        <label className="span3">
-          Grade
-          <select value={gradeId} onChange={(e) => { setGradeId(e.target.value); setFolha(null); }}>
-            {grades.map((g) => (
-              <option key={g.id} value={g.id}>{g.professor} — {g.matricula}</option>
-            ))}
-          </select>
-        </label>
-        <label className="span2">
-          Mês
-          <select value={mes} onChange={(e) => { setMes(e.target.value); setFolha(null); }}>
-            {MESES.map((m, i) => <option key={m} value={i}>{m}</option>)}
-          </select>
-        </label>
-        <label>
-          Ano
-          <input type="number" value={ano} onChange={(e) => { setAno(Number(e.target.value)); setFolha(null); }} />
-        </label>
-      </div>
+      {grades.length === 0 ? (
+        <p className="fp-hint">Nenhuma grade importada. Importe uma grade na tela de Grade antes de gerar a folha.</p>
+      ) : (
+        <>
+          <ListaErros mensagens={erros} />
 
-      {folha && (
-        <div className="fp-sheet">
-          <h3>Folha de ponto — {MESES[mes]} de {ano}</h3>
-          <div className="meta">
-            <span><b>Unidade:</b> {folha.g.unidade}</span>
-            <span><b>Cidade:</b> {folha.g.cidade}</span>
-            <span><b>COD:</b> {folha.g.cod}</span>
-            <span><b>Professor(a):</b> {folha.g.professor}</span>
-            <span><b>Matrícula:</b> {folha.g.matricula}</span>
-            <span><b>Regime Jurídico:</b> {folha.g.regime}</span>
-            <span><b>Categoria:</b> {folha.g.categoria}</span>
-            <span><b>Hora-Aula Semanal:</b> {folha.g.horaAulaSemanal}</span>
-            <span><b>Hora Atividade:</b> {folha.g.horaAtividade}</span>
-            <span><b>HAE (Projeto/Orientação):</b> {folha.g.haeProjeto}</span>
-            <span><b>HAE (Coordenação):</b> {folha.g.haeCoordenacao}</span>
+          <div className="form-grid">
+            <label className="span3">
+              Grade
+              <select value={gradeId} onChange={alterar(setGradeId)} disabled={gerando}>
+                {grades.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.nome} — {g.matricula}{g.semestre ? ` · ${g.semestre}` : ""}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="span2">
+              Mês
+              <select value={mes} onChange={alterar(setMes)} disabled={gerando}>
+                {MESES.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+              </select>
+            </label>
+            <label>
+              Ano
+              <input type="number" min="2000" max="2100" value={ano} onChange={alterar(setAno)} disabled={gerando} />
+            </label>
+            <label className="span3">
+              Formato
+              <select value={formato} onChange={alterar(setFormato)} disabled={gerando}>
+                <option value="docx">Word (.docx)</option>
+                <option value="pdf">PDF (requer LibreOffice no servidor)</option>
+              </select>
+            </label>
           </div>
-          <table>
-            <thead>
-              <tr><th>Dia</th><th>Entrada</th><th>Saída</th><th>Entrada</th><th>Saída</th><th>Assinatura</th></tr>
-            </thead>
-            <tbody>
-              {folha.dias.map((d) => (
-                <tr key={d.dia}>
-                  <td className={d.fim ? "dim" : ""}>{String(d.dia).padStart(2, "0")} {d.sem}</td>
-                  {[0, 1, 2, 3, 4].map((c) => <td key={c} className={d.fim ? "dim" : ""} />)}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+
+          <p className="fp-hint">
+            A folha é preenchida com a grade de aulas e os dados do cabeçalho (edite em “Editar”).
+            Gerar de novo para o mesmo professor e mês substitui a folha anterior.
+          </p>
+
+          {pronta && (
+            <div className="fp-ok" role="status">
+              <p>
+                Folha de <b>{MESES[pronta.mes - 1]}/{pronta.ano}</b> de {pronta.nome} gerada.
+              </p>
+              <a className="action-btn action-btn--light fp-download" href={pronta.url} download>
+                Baixar {pronta.formato === "pdf" ? "PDF" : "Word (.docx)"}
+              </a>
+            </div>
+          )}
+        </>
       )}
     </Modal>
   );
@@ -259,20 +281,29 @@ function ModalGerar({ grades, gradeInicial, onClose }) {
    Tela principal
 ------------------------------------------------------------------- */
 export default function Folha() {
-  const [grades, setGrades] = useState(GRADES_INICIAIS);
+  const { grades, status, erro, recarregar } = useGrades();
   const [busca, setBusca] = useState("");
-  const [regime, setRegime] = useState("Todos");
+  const [regime, setRegime] = useState(TODOS);
   const [filtroAberto, setFiltroAberto] = useState(false);
   const [selecionada, setSelecionada] = useState(null);
   const [editando, setEditando] = useState(null);
   const [gerando, setGerando] = useState(false);
+  const [aviso, setAviso] = useState("");
+
+  const regimes = useMemo(
+    () => [TODOS, ...[...new Set(grades.map((g) => g.contrato).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"))],
+    [grades],
+  );
 
   const visiveis = useMemo(() => {
     const q = busca.trim().toLowerCase();
     return grades.filter((g) => {
-      const okRegime = regime === "Todos" || g.regime === regime;
-      const okBusca = !q || Object.values(g).join(" ").toLowerCase().includes(q);
-      return okRegime && okBusca;
+      const okRegime = regime === TODOS || g.contrato === regime;
+      const texto = [
+        g.nome, g.matricula, g.contrato, g.categoria, g.semestre,
+        g.horaAulaSemanal, g.horaAtividade, g.haeProjeto, g.haeCoordenacao,
+      ].join(" ").toLowerCase();
+      return okRegime && (!q || texto.includes(q));
     });
   }, [grades, busca, regime]);
 
@@ -284,9 +315,22 @@ export default function Folha() {
     return () => document.removeEventListener("keydown", esc);
   }, [filtroAberto]);
 
-  const salvar = (nova) => {
-    setGrades((gs) => gs.map((g) => (g.id === nova.id ? nova : g)));
+  // Professor e grade são endpoints separados: `alteracoes` calcula o que mudou.
+  const salvar = async (original, form) => {
+    const mudancas = alteracoes(original, form);
+    if (!mudancas.professor && !mudancas.grade) {
+      setEditando(null);
+      return;
+    }
+
+    try {
+      await aplicarAlteracoes(original, mudancas);
+    } finally {
+      await recarregar({ silencioso: true }); // também em falha parcial
+    }
+
     setEditando(null);
+    setAviso("Alterações salvas.");
   };
 
   return (
@@ -294,22 +338,22 @@ export default function Folha() {
       <Head title="Folhas de ponto" />
       <NavBar />
 
-      <main id="conteudo" tabIndex={-1} className="fp">
+      <main id="conteudo" tabIndex={-1} className="fp" aria-busy={status === "carregando"}>
         <Toolbar>
           <SearchBar value={busca} onChange={(e) => setBusca(e.target.value)} />
 
           <div className="fp-filter-wrap">
             <FilterButton
-              count={regime === "Todos" ? 0 : 1}
+              count={regime === TODOS ? 0 : 1}
               aria-expanded={filtroAberto}
               onClick={() => setFiltroAberto((v) => !v)}
             />
             {filtroAberto && (
               <div className="fp-menu" role="group" aria-label="Filtrar por regime jurídico">
-                {REGIMES.map((r) => (
+                {regimes.map((r) => (
                   <button key={r} aria-pressed={regime === r}
                           onClick={() => { setRegime(r); setFiltroAberto(false); }}>
-                    {r === "Todos" ? "Todos os regimes" : r}
+                    {r === TODOS ? "Todos os regimes" : r}
                   </button>
                 ))}
               </div>
@@ -321,23 +365,49 @@ export default function Folha() {
           </ActionButton>
         </Toolbar>
 
-        {/* anuncia para leitores de tela quantas grades restaram após buscar/filtrar */}
-        <p className="sr-only" role="status">
-          {visiveis.length} {visiveis.length === 1 ? "grade encontrada" : "grades encontradas"}
-        </p>
+        {aviso && (
+          <p className="fp-toast" role="status">
+            {aviso}
+            <button type="button" onClick={() => setAviso("")} aria-label="Dispensar aviso">×</button>
+          </p>
+        )}
+
+        {status === "ok" && (
+          // anuncia para leitores de tela quantas grades restaram após buscar/filtrar
+          <p className="sr-only" role="status">
+            {visiveis.length} {visiveis.length === 1 ? "grade encontrada" : "grades encontradas"}
+          </p>
+        )}
 
         <section className="fp-list" aria-label="Grades">
-          {visiveis.map((g) => (
-            <GradeCard
-              key={g.id}
-              g={g}
-              selecionada={selecionada === g.id}
-              onSelect={setSelecionada}
-              onEdit={setEditando}
-            />
-          ))}
-          {visiveis.length === 0 && (
-            <p className="fp-empty">Nenhuma grade encontrada. Ajuste a busca ou os filtros.</p>
+          {status === "carregando" && <p className="fp-empty" role="status">Carregando grades…</p>}
+
+          {status === "erro" && (
+            <div className="fp-empty fp-falha" role="alert">
+              <p>Não foi possível carregar as grades. {erro}</p>
+              <ActionButton variant="light" onClick={() => recarregar()}>Tentar de novo</ActionButton>
+            </div>
+          )}
+
+          {status === "ok" && (
+            <>
+              {visiveis.map((g) => (
+                <GradeCard
+                  key={g.id}
+                  g={g}
+                  selecionada={selecionada === g.id}
+                  onSelect={setSelecionada}
+                  onEdit={setEditando}
+                />
+              ))}
+              {visiveis.length === 0 && (
+                <p className="fp-empty">
+                  {grades.length === 0
+                    ? "Nenhuma grade importada ainda. Importe uma na tela de Grade para gerar folhas."
+                    : "Nenhuma grade encontrada. Ajuste a busca ou os filtros."}
+                </p>
+              )}
+            </>
           )}
         </section>
 

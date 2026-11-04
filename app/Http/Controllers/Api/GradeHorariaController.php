@@ -39,6 +39,9 @@ class GradeHorariaController extends Controller
             'validade_inicio' => ['sometimes', 'nullable', 'date'],
             'validade_fim' => ['sometimes', 'nullable', 'date', 'after_or_equal:validade_inicio'],
             'hora_aula_semanal' => ['sometimes', 'nullable', 'integer', 'min:0'],
+            'hora_atividade' => ['sometimes', 'nullable', 'string', 'max:50'],
+            'hae_projeto' => ['sometimes', 'nullable', 'string', 'max:50'],
+            'hae_coordenacao' => ['sometimes', 'nullable', 'string', 'max:50'],
         ]);
 
         $gradeHoraria->update($validado);
