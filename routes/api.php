@@ -20,8 +20,10 @@ Route::get('/professores', [ProfessorController::class, 'index']);
 Route::get('/professores/{professor}', [ProfessorController::class, 'show']);
 Route::match(['put', 'patch'], '/professores/{professor}', [ProfessorController::class, 'update']);
 
+Route::get('/grades-horarias', [GradeHorariaController::class, 'index']);
 Route::get('/grades-horarias/{gradeHoraria}', [GradeHorariaController::class, 'show']);
 Route::match(['put', 'patch'], '/grades-horarias/{gradeHoraria}', [GradeHorariaController::class, 'update']);
+Route::delete('/grades-horarias/{gradeHoraria}', [GradeHorariaController::class, 'destroy']);
 
 Route::apiResource('componentes-curriculares', ComponenteCurricularController::class)
     ->only(['index', 'store', 'show', 'update', 'destroy']);

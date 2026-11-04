@@ -24,8 +24,8 @@ class GradeHoraria extends Model
     ];
 
     protected $casts = [
-        'validade_inicio' => 'date',
-        'validade_fim' => 'date',
+        'validade_inicio' => 'date:Y-m-d',
+        'validade_fim' => 'date:Y-m-d',
         'dados_brutos' => 'array',
     ];
 

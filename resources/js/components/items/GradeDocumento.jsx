@@ -1,4 +1,4 @@
-import { DIAS, PERIODOS, HAE_RJI, dataBR, totais, fmtNum } from "../../data/gradesMock.js";
+import { DIAS, PERIODOS, HAE_RJI, dataBR, totais, fmtNum } from "../../utils/grade.js";
 import "../styles/GradeDocumento.css";
 
 
@@ -11,7 +11,7 @@ function Slot({ aula, matricula, comHorario = true }) {
     return (
         <div className="gd-slot">
             {comHorario && <span className="gd-slot-time">{aula.inicio} | {aula.fim}</span>}
-            <span>OP:111</span>
+            {aula.codigoOp && <span>OP:{aula.codigoOp}</span>}
             <strong>{aula.disciplina}</strong>
             <span className="gd-slot-mat">{matricula}</span>
         </div>
@@ -35,7 +35,7 @@ function QuadroPeriodo({ grade, periodo }) {
                             {DIAS.map((d) => (
                                 <td key={d.id}>
                                     {aulasDoDia(grade, periodo.id, d.id).map((a) => (
-                                        <Slot key={a.inicio} aula={a} matricula={grade.matricula} />
+                                        <Slot key={a.id ?? a.inicio} aula={a} matricula={grade.matricula} />
                                     ))}
                                 </td>
                             ))}
@@ -60,7 +60,7 @@ function ListaPorDia({ grade }) {
                         <h3>{d.label}</h3>
                         {aulas.length === 0 && <p className="gd-empty">Sem aulas</p>}
                         {aulas.map((a) => (
-                            <div key={a.inicio} className="gd-day-item">
+                            <div key={a.id ?? a.inicio} className="gd-day-item">
                                 <div className="gd-day-when">
                                     <strong>{a.periodo}</strong>
                                     <span>{a.inicio} | {a.fim}</span>
@@ -110,7 +110,7 @@ export default function GradeDocumento({ grade }) {
                         </thead>
                         <tbody>
                             {grade.componentes.map((c) => (
-                                <tr key={c.disciplina}>
+                                <tr key={c.id ?? c.disciplina}>
                                     <td data-label="Disciplina/Projeto" className="gd-disciplina">{c.disciplina}</td>
                                     <td data-label="Curso">{c.curso}</td>
                                     <td data-label="Período">{c.periodo}</td>
@@ -176,7 +176,7 @@ export default function GradeDocumento({ grade }) {
                     <Assinatura rotulo="De acordo" nome={grade.assinaturas.coordenadorFatec} funcao="Coordenador de Fatec" />
                     <Assinatura rotulo="De acordo" nome={grade.nome} funcao="Professor" />
                     {grade.assinaturas.chefes.map((c) => (
-                        <Assinatura key={c.nome} rotulo="Aprovado" nome={c.nome} funcao={c.funcao} />
+                        <Assinatura key={c.funcao} rotulo="Aprovado" nome={c.nome} funcao={c.funcao} />
                     ))}
                 </div>
                 <p className="gd-obs"><b>Observações:</b></p>
@@ -188,7 +188,7 @@ export default function GradeDocumento({ grade }) {
 function Assinatura({ rotulo, nome, funcao }) {
     return (
         <div className="gd-ass">
-            <span>{rotulo}: <b>{nome}</b></span>
+            <span>{rotulo}: <b>{nome || "______________________________"}</b></span>
             <span className="gd-ass-data">Data: ____/____/_______</span>
             <span className="gd-ass-funcao">{funcao}</span>
         </div>
