@@ -8,8 +8,11 @@ use App\Services\GradeImport\GradeImportService;
 use App\Services\GradeImport\GradePdfParser;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
+use RuntimeException;
+use Throwable;
 
 class GradeImportController extends Controller
 {
@@ -17,8 +20,7 @@ class GradeImportController extends Controller
         private readonly GradeImportService $gradeImportService,
         private readonly GradePdfParser $pdfParser,
         private readonly GradeDocxParser $docxParser,
-    ) {
-    }
+    ) {}
 
     /**
      * POST /api/grades  (multipart/form-data, campo "arquivo")
@@ -35,17 +37,40 @@ class GradeImportController extends Controller
 
         $arquivo = $request->file('arquivo');
         $caminhoArmazenado = $arquivo->store('grades-importadas');
-        $caminhoAbsoluto = Storage::path($caminhoArmazenado);
 
-        $parser = match (strtolower($arquivo->getClientOriginalExtension())) {
-            'pdf' => $this->pdfParser,
-            'docx' => $this->docxParser,
-            default => throw new InvalidArgumentException('Formato de arquivo não suportado.'),
-        };
+        if ($caminhoArmazenado === false) {
+            throw new RuntimeException('Não foi possível armazenar o arquivo enviado.');
+        }
 
-        $dados = $parser->parse($caminhoAbsoluto);
+        try {
+            $caminhoAbsoluto = Storage::path($caminhoArmazenado);
 
-        $grade = $this->gradeImportService->importar($dados, $caminhoArmazenado);
+            $parser = match (strtolower($arquivo->getClientOriginalExtension())) {
+                'pdf' => $this->pdfParser,
+                'docx' => $this->docxParser,
+                default => throw new InvalidArgumentException('Formato de arquivo não suportado.'),
+            };
+
+            $dados = $parser->parse($caminhoAbsoluto);
+            $grade = $this->gradeImportService->importar($dados, $caminhoArmazenado);
+        } catch (Throwable $exception) {
+            try {
+                if (Storage::exists($caminhoArmazenado) && ! Storage::delete($caminhoArmazenado)) {
+                    Log::error('Não foi possível remover um arquivo de grade após falha na importação.', [
+                        'caminho' => $caminhoArmazenado,
+                        'exception' => $exception,
+                    ]);
+                }
+            } catch (Throwable $cleanupException) {
+                Log::error('Falha ao limpar arquivo de grade após erro na importação.', [
+                    'caminho' => $caminhoArmazenado,
+                    'exception' => $exception,
+                    'cleanup_exception' => $cleanupException,
+                ]);
+            }
+
+            throw $exception;
+        }
 
         return response()->json([
             'grade_horaria' => $grade,

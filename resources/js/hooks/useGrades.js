@@ -3,7 +3,7 @@ import { gradesApi } from "../services/api.js";
 import { adaptarGrade } from "../utils/grade.js";
 
 /**
- * Carrega a lista de grades do back (GET /api/grades-horarias) já no formato da UI.
+ * Carrega grades e opções do back (GET /api/grades-horarias) no formato da UI.
  *
  * status: "carregando" | "ok" | "erro"
  * recarregar({ silencioso }) — silencioso mantém a lista na tela (sem "Carregando…")
@@ -11,18 +11,20 @@ import { adaptarGrade } from "../utils/grade.js";
  */
 export default function useGrades() {
     const [grades, setGrades] = useState([]);
+    const [opcoes, setOpcoes] = useState({});
     const [status, setStatus] = useState("carregando");
     const [erro, setErro] = useState("");
     const ultimaRequisicao = useRef(0);
 
-    const recarregar = useCallback(async ({ silencioso = false } = {}) => {
+    const recarregar = useCallback(async ({ silencioso = false, filtros = {} } = {}) => {
         const id = ++ultimaRequisicao.current;
         if (!silencioso) setStatus("carregando");
 
         try {
-            const lista = await gradesApi.listar();
+            const resultado = await gradesApi.listar(filtros);
             if (id !== ultimaRequisicao.current) return true; // chegou uma resposta mais nova
-            setGrades(lista.map(adaptarGrade));
+            setGrades(resultado.data.map(adaptarGrade));
+            setOpcoes(resultado.opcoes);
             setStatus("ok");
             setErro("");
             return true;
@@ -38,5 +40,5 @@ export default function useGrades() {
 
     useEffect(() => { recarregar(); }, [recarregar]);
 
-    return { grades, setGrades, status, erro, recarregar };
+    return { grades, setGrades, opcoes, status, erro, recarregar };
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Head } from "@inertiajs/react";
 import NavBar from "../components/items/NavBar.jsx";
 import Modal from "../components/items/Modal.jsx";
@@ -349,7 +349,7 @@ function ModalImportar({ onImportado, onClose }) {
    Tela principal
 ------------------------------------------------------------------- */
 export default function Grade() {
-    const { grades, setGrades, status, erro, recarregar } = useGrades();
+    const { grades, setGrades, opcoes, status, erro, recarregar } = useGrades();
     const [busca, setBusca] = useState("");
     const [filtro, setFiltro] = useState(FILTRO_VAZIO);
     const [filtroAberto, setFiltroAberto] = useState(false);
@@ -357,33 +357,23 @@ export default function Grade() {
     const [editando, setEditando] = useState(null);
     const [importando, setImportando] = useState(false);
     const [aviso, setAviso] = useState("");
+    const ultimoFiltroSolicitado = useRef({ busca, filtro });
 
-    const opcoes = useMemo(() => ({
-        semestres: unicos(grades.map((g) => g.semestre)),
-        cursos: unicos(grades.flatMap((g) => g.componentes.map((c) => c.curso))),
-        periodos: unicos(grades.flatMap((g) => g.componentes.map((c) => c.periodo))),
-        statuses: unicos(grades.flatMap((g) => g.componentes.map((c) => c.status))),
-    }), [grades]);
+    const visiveis = grades;
+    const filtrosDaTela = { q: busca.trim(), ...filtro };
 
-    const visiveis = useMemo(() => {
-        const q = busca.trim().toLowerCase();
-        return grades.filter((g) => {
-            const texto = [
-                g.nome, g.matricula, g.cpf, g.contrato, g.semestre, g.unidade,
-                ...g.componentes.flatMap((c) => [c.disciplina, c.curso, c.periodo, c.status]),
-            ].join(" ").toLowerCase();
-            return (
-                (!q || texto.includes(q)) &&
-                (!filtro.semestre || g.semestre === filtro.semestre) &&
-                (!filtro.curso || g.componentes.some((c) => c.curso === filtro.curso)) &&
-                (!filtro.periodo || g.componentes.some((c) => c.periodo === filtro.periodo)) &&
-                (!filtro.status || g.componentes.some((c) => c.status === filtro.status)) &&
-                // vigência: a grade precisa cruzar o intervalo informado (sem data = sem limite)
-                (!filtro.inicio || !g.validadeFim || g.validadeFim >= filtro.inicio) &&
-                (!filtro.fim || !g.validadeInicio || g.validadeInicio <= filtro.fim)
-            );
-        });
-    }, [grades, busca, filtro]);
+    useEffect(() => {
+        if (ultimoFiltroSolicitado.current.busca === busca && ultimoFiltroSolicitado.current.filtro === filtro) {
+            return;
+        }
+
+        ultimoFiltroSolicitado.current = { busca, filtro };
+        const timeout = setTimeout(() => {
+            recarregar({ filtros: filtrosDaTela });
+        }, 300);
+
+        return () => clearTimeout(timeout);
+    }, [busca, filtro, recarregar]);
 
     const filtrosAtivos = Object.values(filtro).filter(Boolean).length;
     const indiceVer = visiveis.findIndex((g) => g.id === verId);
@@ -401,7 +391,7 @@ export default function Grade() {
             await aplicarAlteracoes(original, mudancas);
         } finally {
             // recarrega tudo (também em falha parcial): o professor pode ter várias grades na lista
-            await recarregar({ silencioso: true });
+            await recarregar({ silencioso: true, filtros: filtrosDaTela });
         }
 
         setEditando(null);
@@ -416,7 +406,7 @@ export default function Grade() {
     };
 
     const aoImportar = async (importadas, falhas) => {
-        const atualizou = await recarregar({ silencioso: true });
+        const atualizou = await recarregar({ silencioso: true, filtros: filtrosDaTela });
         const plural = importadas === 1 ? "grade importada" : "grades importadas";
         setAviso(
             `${importadas} ${plural}.` +

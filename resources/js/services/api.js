@@ -53,8 +53,14 @@ async function request(caminho, { method = "GET", json, formData } = {}) {
 
 /* ---------------- grades horárias ---------------- */
 export const gradesApi = {
-    /** GET /api/grades-horarias */
-    listar: () => request("/grades-horarias"),
+    /** GET /api/grades-horarias. Devolve { data, opcoes }; aceita q e filtros da tela Grade. */
+    listar: (filtros = {}) => {
+        const query = new URLSearchParams(
+            Object.entries(filtros).filter(([, valor]) => valor !== "" && valor != null),
+        );
+        const parametros = query.toString();
+        return request(`/grades-horarias${parametros ? `?${parametros}` : ""}`);
+    },
 
     /** GET /api/grades-horarias/{id} */
     obter: (id) => request(`/grades-horarias/${id}`),
