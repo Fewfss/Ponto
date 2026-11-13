@@ -23,6 +23,8 @@ class FolhaPontoController extends Controller
             'ano' => ['required', 'integer', 'min:2000', 'max:2100'],
             'grade_horaria_id' => ['nullable', 'exists:grades_horarias,id'],
             'formato' => ['nullable', 'in:docx,pdf'],
+            'feriados_extras' => ['nullable', 'array', 'max:31'],
+            'feriados_extras.*' => ['date_format:Y-m-d'],
         ]);
 
         $grade = $validado['grade_horaria_id'] ?? null
@@ -31,7 +33,13 @@ class FolhaPontoController extends Controller
 
         abort_if($grade === null, 422, 'Este professor ainda não tem nenhuma grade horária importada.');
 
-        $folha = $this->folhaPontoGenerator->gerar($professor, $grade, $validado['mes'], $validado['ano']);
+        $folha = $this->folhaPontoGenerator->gerar(
+            $professor,
+            $grade,
+            $validado['mes'],
+            $validado['ano'],
+            $validado['feriados_extras'] ?? [],
+        );
 
         $formato = $validado['formato'] ?? 'docx';
 

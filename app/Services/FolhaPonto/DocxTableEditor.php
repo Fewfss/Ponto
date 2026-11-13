@@ -177,29 +177,53 @@ class DocxTableEditor
         $celulas = array_slice($this->celulas($linha), $apartirDaCelula);
 
         foreach ($celulas as $celula) {
-            $tcPr = $this->xpath->query('./w:tcPr', $celula)->item(0);
-            if (!$tcPr instanceof DOMElement) {
-                $tcPr = $this->dom->createElementNS(self::W_NS, 'w:tcPr');
-                $celula->insertBefore($tcPr, $celula->firstChild);
+            $this->definirSombreadoCelula($celula, $comSombra);
+        }
+    }
+
+    /**
+     * Pinta de cinza só as células cujo índice (0-based, dentro da linha) está em
+     * $indicesCinza e limpa o sombreamento das demais, a partir de $apartirDaCelula.
+     *
+     * @param int[] $indicesCinza
+     */
+    public function definirSombreadoCelulas(DOMElement $linha, array $indicesCinza, int $apartirDaCelula = 2): void
+    {
+        foreach ($this->celulas($linha) as $indice => $celula) {
+            if ($indice < $apartirDaCelula) {
+                continue;
             }
 
-            $shd = $this->xpath->query('./w:shd', $tcPr)->item(0);
-            if (!$shd instanceof DOMElement) {
-                $shd = $this->dom->createElementNS(self::W_NS, 'w:shd');
-                $shd->setAttribute('w:val', 'clear');
-                $shd->setAttribute('w:color', 'auto');
-                $tcPr->appendChild($shd);
-            }
+            $this->definirSombreadoCelula($celula, in_array($indice, $indicesCinza, true));
+        }
+    }
 
-            if ($comSombra) {
-                $shd->setAttribute('w:fill', '808080');
-                $shd->setAttribute('w:themeFill', 'background1');
-                $shd->setAttribute('w:themeFillShade', '80');
-            } else {
-                $shd->setAttribute('w:fill', 'auto');
-                $shd->removeAttribute('w:themeFill');
-                $shd->removeAttribute('w:themeFillShade');
-            }
+    private function definirSombreadoCelula(DOMElement $celula, bool $comSombra): void
+    {
+        $tcPr = $this->xpath->query('./w:tcPr', $celula)->item(0);
+        if (!$tcPr instanceof DOMElement) {
+            $tcPr = $this->dom->createElementNS(self::W_NS, 'w:tcPr');
+            $celula->insertBefore($tcPr, $celula->firstChild);
+        }
+
+        // O Word remove o <w:shd> quando ele só descreve o valor padrão (sem sombra);
+        // por isso criamos o elemento se ele não existir.
+        $shd = $this->xpath->query('./w:shd', $tcPr)->item(0);
+        if (!$shd instanceof DOMElement) {
+            $shd = $this->dom->createElementNS(self::W_NS, 'w:shd');
+            $shd->setAttribute('w:val', 'clear');
+            $shd->setAttribute('w:color', 'auto');
+            $tcPr->appendChild($shd);
+        }
+
+        if ($comSombra) {
+            $shd->setAttribute('w:fill', '808080');
+            $shd->setAttribute('w:themeFill', 'background1');
+            $shd->setAttribute('w:themeFillShade', '80');
+        } else {
+            $shd->setAttribute('w:fill', 'auto');
+            $shd->removeAttribute('w:themeFill');
+            $shd->removeAttribute('w:themeFillShade');
         }
     }
 

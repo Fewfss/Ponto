@@ -37,7 +37,11 @@ class FolhaPontoGenerator
     ) {
     }
 
-    public function gerar(Professor $professor, GradeHoraria $grade, int $mes, int $ano): FolhaPonto
+    /**
+     * @param array<int, string> $feriadosExtras datas "YYYY-MM-DD" a tratar como feriado além dos
+     *        já conhecidos (ex.: Carnaval, recesso da faculdade) — ficam cinza na frequência.
+     */
+    public function gerar(Professor $professor, GradeHoraria $grade, int $mes, int $ano, array $feriadosExtras = []): FolhaPonto
     {
         $caminhoTemplate = Storage::path(self::TEMPLATE_PATH);
 
@@ -68,7 +72,7 @@ class FolhaPontoGenerator
 
         $editor = new DocxTableEditor($documentXml);
         $this->preencherGradeHoraria($editor, $grade);
-        $this->atualizarCalendarioMensal($editor, $mes, $ano);
+        $this->atualizarCalendarioMensal($editor, $mes, $ano, AgendaSemanal::deAulas($grade->aulas), Feriados::doMes($mes, $ano, $feriadosExtras));
 
         $this->escreverDocumentXmlNoZip($arquivoTemp, $editor->toXml());
 
@@ -195,8 +199,16 @@ class FolhaPontoGenerator
         return $indice;
     }
 
-    private function atualizarCalendarioMensal(DocxTableEditor $editor, int $mes, int $ano): void
-    {
+    /**
+     * @param array<int, string> $feriados dia do mês => nome do feriado
+     */
+    private function atualizarCalendarioMensal(
+        DocxTableEditor $editor,
+        int $mes,
+        int $ano,
+        AgendaSemanal $agenda,
+        array $feriados = [],
+    ): void {
         $tabela = $editor->localizarTabelaPorInicioDaPrimeiraLinha('Dia');
         $linhas = $editor->linhas($tabela);
 
@@ -218,7 +230,17 @@ class FolhaPontoGenerator
                 $editor->definirTextoDaCelula($celulas[1], $dias[$indice]['dia_semana']);
             }
 
-            $editor->definirSombreadoLinha($linha, $dias[$indice]['dia_semana_slug'] === 'domingo');
+            $slug = $dias[$indice]['dia_semana_slug'];
+            $feriado = isset($feriados[$numeroDoDia]);
+
+            // Cinza = "aqui não se assina": domingos, feriados, dias sem aula e as aulas que o
+            // professor não dá. Se a linha não tiver o layout esperado do modelo (21 células),
+            // não dá pra apontar a coluna de cada aula, então só marcamos domingo/feriado.
+            if (count($celulas) === SombreadoFrequencia::TOTAL_DE_CELULAS) {
+                $editor->definirSombreadoCelulas($linha, SombreadoFrequencia::celulasCinzas($slug, $feriado, $agenda));
+            } else {
+                $editor->definirSombreadoLinha($linha, $slug === 'domingo' || $feriado);
+            }
         }
     }
 
