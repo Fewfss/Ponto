@@ -81,4 +81,28 @@ class GradeHorariaTest extends TestCase
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', $grade->id);
     }
+
+    public function test_it_filters_grades_by_professor_regime_and_returns_regime_options(): void
+    {
+        $efetivo = Professor::create([
+            'nome' => 'Ana Souza',
+            'matricula' => '12345',
+            'regime_juridico' => 'Efetivo',
+        ]);
+        $substituto = Professor::create([
+            'nome' => 'Bruno Lima',
+            'matricula' => '67890',
+            'regime_juridico' => 'Substituto',
+        ]);
+
+        $gradeEfetivo = GradeHoraria::create(['professor_id' => $efetivo->id]);
+        GradeHoraria::create(['professor_id' => $substituto->id]);
+
+        $this->getJson('/api/grades-horarias?regime=Efetivo')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $gradeEfetivo->id)
+            ->assertJsonPath('opcoes.regimes.0', 'Efetivo')
+            ->assertJsonPath('opcoes.regimes.1', 'Substituto');
+    }
 }

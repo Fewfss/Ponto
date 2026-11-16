@@ -4,10 +4,16 @@ namespace App\Services\FolhaPonto;
 
 use RuntimeException;
 use Symfony\Component\Process\Exception\ProcessTimedOutException;
+use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
 
 class DocxToPdfConverter
 {
+    public function estaDisponivel(): bool
+    {
+        return $this->localizarSoffice() !== null;
+    }
+
     /**
      * @return string caminho absoluto do .pdf gerado (na mesma pasta do .docx de entrada).
      */
@@ -21,35 +27,38 @@ class DocxToPdfConverter
         @set_time_limit(180);
 
         $raiz = $this->pastaDeTrabalho();
-        $home = $raiz . DIRECTORY_SEPARATOR . 'home';
-        $perfil = $raiz . DIRECTORY_SEPARATOR . 'perfil';
-        $pasta = $raiz . DIRECTORY_SEPARATOR . 'conv_' . uniqid('', false);
+        $home = $raiz.DIRECTORY_SEPARATOR.'home';
+        $perfil = $raiz.DIRECTORY_SEPARATOR.'perfil';
+        $pasta = $raiz.DIRECTORY_SEPARATOR.'conv_'.uniqid('', false);
 
-        foreach ([$home, $perfil, $pasta, $home . DIRECTORY_SEPARATOR . 'AppData' . DIRECTORY_SEPARATOR . 'Roaming', $home . DIRECTORY_SEPARATOR . 'AppData' . DIRECTORY_SEPARATOR . 'Local'] as $dir) {
+        foreach ([$home, $perfil, $pasta, $home.DIRECTORY_SEPARATOR.'AppData'.DIRECTORY_SEPARATOR.'Roaming', $home.DIRECTORY_SEPARATOR.'AppData'.DIRECTORY_SEPARATOR.'Local'] as $dir) {
             if (! is_dir($dir) && ! mkdir($dir, 0777, true) && ! is_dir($dir)) {
                 throw new RuntimeException("Não foi possível criar a pasta de trabalho: {$dir}");
             }
         }
 
-        $trava = fopen($raiz . DIRECTORY_SEPARATOR . 'conversao.lock', 'c');
+        $trava = fopen($raiz.DIRECTORY_SEPARATOR.'conversao.lock', 'c');
         if ($trava !== false) {
             flock($trava, LOCK_EX);
         }
 
         try {
-            $entrada = $pasta . DIRECTORY_SEPARATOR . 'entrada.docx';
+            $entrada = $pasta.DIRECTORY_SEPARATOR.'entrada.docx';
             if (! copy($caminhoDocxAbsoluto, $entrada)) {
                 throw new RuntimeException("Não foi possível copiar o arquivo para: {$pasta}");
             }
 
             $executavel = $this->localizarSoffice();
+            if ($executavel === null) {
+                throw new RuntimeException('O PDF não está disponível neste ambiente.');
+            }
 
             $process = new Process([
                 $executavel,
                 '--headless',
                 '--norestore',
                 '--nolockcheck',
-                '-env:UserInstallation=' . $this->paraFileUri($perfil),
+                '-env:UserInstallation='.$this->paraFileUri($perfil),
                 '--convert-to', 'pdf',
                 '--outdir', $pasta,
                 $entrada,
@@ -64,7 +73,7 @@ class DocxToPdfConverter
                 );
             }
 
-            $pdfTemporario = $pasta . DIRECTORY_SEPARATOR . 'entrada.pdf';
+            $pdfTemporario = $pasta.DIRECTORY_SEPARATOR.'entrada.pdf';
 
             // Se o soffice terminou com sucesso mas o PDF ainda não apareceu (o soffice.exe do Windows
             // pode devolver o controle cedo), espera um pouco. Se falhou, não adianta esperar.
@@ -77,13 +86,13 @@ class DocxToPdfConverter
 
             if (! is_file($pdfTemporario) || filesize($pdfTemporario) === 0) {
                 throw new RuntimeException(
-                    'Falha ao converter o documento para PDF. Executável: ' . $executavel
-                    . ' | código de saída: ' . $process->getExitCode()
-                    . ' | saída: ' . trim($process->getErrorOutput() . ' ' . $process->getOutput())
+                    'Falha ao converter o documento para PDF. Executável: '.$executavel
+                    .' | código de saída: '.$process->getExitCode()
+                    .' | saída: '.trim($process->getErrorOutput().' '.$process->getOutput())
                 );
             }
 
-            $destino = dirname($caminhoDocxAbsoluto) . DIRECTORY_SEPARATOR . pathinfo($caminhoDocxAbsoluto, PATHINFO_FILENAME) . '.pdf';
+            $destino = dirname($caminhoDocxAbsoluto).DIRECTORY_SEPARATOR.pathinfo($caminhoDocxAbsoluto, PATHINFO_FILENAME).'.pdf';
 
             if (! copy($pdfTemporario, $destino)) {
                 throw new RuntimeException("Não foi possível salvar o PDF em: {$destino}");
@@ -114,8 +123,8 @@ class DocxToPdfConverter
 
             $env += [
                 'USERPROFILE' => $home,
-                'APPDATA' => $home . '\\AppData\\Roaming',
-                'LOCALAPPDATA' => $home . '\\AppData\\Local',
+                'APPDATA' => $home.'\\AppData\\Roaming',
+                'LOCALAPPDATA' => $home.'\\AppData\\Local',
                 'TEMP' => $raiz,
                 'TMP' => $raiz,
                 'SystemRoot' => $sistema,
@@ -135,7 +144,7 @@ class DocxToPdfConverter
         }
 
         foreach ($candidatas as $base) {
-            $pasta = rtrim($base, '\\/') . DIRECTORY_SEPARATOR . 'ponto_libreoffice';
+            $pasta = rtrim($base, '\\/').DIRECTORY_SEPARATOR.'ponto_libreoffice';
 
             if ((is_dir($pasta) || @mkdir($pasta, 0777, true)) && is_writable($pasta)) {
                 return $pasta;
@@ -150,18 +159,23 @@ class DocxToPdfConverter
      * LIBREOFFICE_BIN do .env; no Windows, "Arquivos de Programas" (preferindo o soffice.com,
      * versão de console que espera terminar); por fim o "soffice" do PATH (Linux).
      */
-    private function localizarSoffice(): string
+    private function localizarSoffice(): ?string
     {
         $configurado = env('LIBREOFFICE_BIN');
+        $finder = new ExecutableFinder;
 
-        if ($configurado && is_file($configurado)) {
-            return $this->preferirConsole($configurado);
+        if ($configurado) {
+            $executavel = is_file($configurado)
+                ? $configurado
+                : $finder->find($configurado);
+
+            return $executavel ? $this->preferirConsole($executavel) : null;
         }
 
         if (PHP_OS_FAMILY === 'Windows') {
             foreach (array_filter([getenv('ProgramFiles'), getenv('ProgramFiles(x86)'), 'C:\\Program Files', 'C:\\Program Files (x86)']) as $base) {
                 foreach (['soffice.com', 'soffice.exe'] as $arquivo) {
-                    $caminho = $base . '\\LibreOffice\\program\\' . $arquivo;
+                    $caminho = $base.'\\LibreOffice\\program\\'.$arquivo;
 
                     if (is_file($caminho)) {
                         return $caminho;
@@ -170,13 +184,15 @@ class DocxToPdfConverter
             }
         }
 
-        return $configurado ?: 'soffice';
+        $executavel = $finder->find('soffice');
+
+        return $executavel ? $this->preferirConsole($executavel) : null;
     }
 
     private function preferirConsole(string $caminho): string
     {
         if (PHP_OS_FAMILY === 'Windows' && preg_match('/\.exe$/i', $caminho)) {
-            $com = substr($caminho, 0, -4) . '.com';
+            $com = substr($caminho, 0, -4).'.com';
 
             if (is_file($com)) {
                 return $com;
@@ -192,10 +208,10 @@ class DocxToPdfConverter
         $normalizado = str_replace('\\', '/', $caminho);
 
         if (! str_starts_with($normalizado, '/')) {
-            $normalizado = '/' . $normalizado;
+            $normalizado = '/'.$normalizado;
         }
 
-        return 'file://' . $normalizado;
+        return 'file://'.$normalizado;
     }
 
     private function apagarPasta(string $pasta): void

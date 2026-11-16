@@ -6,14 +6,26 @@ use App\Http\Controllers\Controller;
 use App\Models\FolhaPonto;
 use App\Models\Professor;
 use App\Services\FolhaPonto\FolhaPontoGenerator;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use RuntimeException;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use ZipArchive;
 
 class FolhaPontoController extends Controller
 {
     public function __construct(
         private readonly FolhaPontoGenerator $folhaPontoGenerator,
-    ) {
+    ) {}
+
+    public function capabilities(): JsonResponse
+    {
+        return response()->json([
+            'pdf_disponivel' => $this->folhaPontoGenerator->pdfDisponivel(),
+        ]);
     }
 
     public function store(Request $request, Professor $professor)
@@ -70,5 +82,78 @@ class FolhaPontoController extends Controller
         );
 
         return Storage::download($caminho, basename($caminho));
+    }
+
+    public function downloadZip(Request $request): BinaryFileResponse
+    {
+        $validado = $request->validate([
+            'folha_ponto_ids' => ['required', 'array', 'min:1', 'max:100'],
+            'folha_ponto_ids.*' => ['required', 'integer', 'distinct', 'exists:folhas_ponto,id'],
+            'formato' => ['required', 'in:docx,pdf'],
+        ]);
+
+        $formato = $validado['formato'];
+        $folhas = FolhaPonto::query()
+            ->with('professor')
+            ->whereIn('id', $validado['folha_ponto_ids'])
+            ->get();
+
+        /** @var Collection<int, array{nome: string, conteudo: string}> $arquivos */
+        $arquivos = $folhas->map(function (FolhaPonto $folha) use ($formato): array {
+            $caminho = $formato === 'pdf'
+                ? $folha->arquivo_gerado_pdf
+                : $folha->arquivo_gerado;
+
+            abort_if(
+                ! $caminho || ! Storage::exists($caminho),
+                404,
+                'Uma das folhas solicitadas não possui o arquivo disponível.'
+            );
+
+            $matricula = Str::slug($folha->professor->matricula ?? '') ?: 'sem-matricula';
+            $nomeProfessor = Str::slug($folha->professor->nome ?? '') ?: 'professor';
+            $nomeArquivo = sprintf(
+                '%s-%s-%02d-%04d-%d.%s',
+                $matricula,
+                $nomeProfessor,
+                $folha->mes,
+                $folha->ano,
+                $folha->id,
+                $formato
+            );
+
+            return [
+                'nome' => $nomeArquivo,
+                'conteudo' => Storage::get($caminho),
+            ];
+        });
+
+        $caminhoZip = tempnam(sys_get_temp_dir(), 'folhas-ponto-');
+        if ($caminhoZip === false) {
+            throw new RuntimeException('Não foi possível preparar o arquivo ZIP.');
+        }
+
+        $zip = new ZipArchive;
+        if ($zip->open($caminhoZip, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+            unlink($caminhoZip);
+            throw new RuntimeException('Não foi possível criar o arquivo ZIP.');
+        }
+
+        foreach ($arquivos as $arquivo) {
+            if (! $zip->addFromString($arquivo['nome'], $arquivo['conteudo'])) {
+                $zip->close();
+                unlink($caminhoZip);
+                throw new RuntimeException('Não foi possível adicionar uma folha ao arquivo ZIP.');
+            }
+        }
+
+        if (! $zip->close()) {
+            unlink($caminhoZip);
+            throw new RuntimeException('Não foi possível finalizar o arquivo ZIP.');
+        }
+
+        return response()
+            ->download($caminhoZip, 'folhas-ponto.zip', ['Content-Type' => 'application/zip'])
+            ->deleteFileAfterSend();
     }
 }

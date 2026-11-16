@@ -21,6 +21,30 @@ class FolhaPontoTest extends TestCase
 
     private array $temporaryFiles = [];
 
+    public function test_it_reports_when_pdf_generation_is_available(): void
+    {
+        $this->mock(DocxToPdfConverter::class)
+            ->shouldReceive('estaDisponivel')
+            ->once()
+            ->andReturn(true);
+
+        $this->getJson('/api/folhas-ponto/capabilities')
+            ->assertOk()
+            ->assertJsonPath('pdf_disponivel', true);
+    }
+
+    public function test_it_reports_when_pdf_generation_is_unavailable(): void
+    {
+        $this->mock(DocxToPdfConverter::class)
+            ->shouldReceive('estaDisponivel')
+            ->once()
+            ->andReturn(false);
+
+        $this->getJson('/api/folhas-ponto/capabilities')
+            ->assertOk()
+            ->assertJsonPath('pdf_disponivel', false);
+    }
+
     protected function tearDown(): void
     {
         foreach ($this->temporaryFiles as $temporaryFile) {
@@ -61,6 +85,92 @@ class FolhaPontoTest extends TestCase
         $this->assertStringNotContainsString('30', $xml);
     }
 
+    public function test_it_downloads_a_zip_with_the_generated_sheets(): void
+    {
+        Storage::fake('local');
+        $this->createSyntheticTemplate();
+        [$firstProfessor] = $this->createProfessorWithGrade();
+        [$secondProfessor] = $this->createProfessorWithGrade('67890');
+
+        $firstResponse = $this->postJson("/api/professores/{$firstProfessor->id}/folhas-ponto", [
+            'mes' => 3,
+            'ano' => 2026,
+            'formato' => 'docx',
+        ])->assertCreated();
+        $secondResponse = $this->postJson("/api/professores/{$secondProfessor->id}/folhas-ponto", [
+            'mes' => 3,
+            'ano' => 2026,
+            'formato' => 'docx',
+        ])->assertCreated();
+
+        $response = $this->post('/api/folhas-ponto/download-zip', [
+            'folha_ponto_ids' => [
+                $firstResponse->json('folha_ponto.id'),
+                $secondResponse->json('folha_ponto.id'),
+            ],
+            'formato' => 'docx',
+        ]);
+
+        $response->assertDownload('folhas-ponto.zip');
+        $zipPath = $response->baseResponse->getFile()->getPathname();
+        $this->temporaryFiles[] = $zipPath;
+
+        $zip = new ZipArchive;
+        $this->assertSame(true, $zip->open($zipPath));
+        $this->assertSame(2, $zip->numFiles);
+        $this->assertNotFalse($zip->locateName('12345-ana-souza-03-2026-'.$firstResponse->json('folha_ponto.id').'.docx'));
+        $this->assertNotFalse($zip->locateName('67890-ana-souza-03-2026-'.$secondResponse->json('folha_ponto.id').'.docx'));
+        $zip->close();
+    }
+
+    public function test_it_returns_not_found_when_a_requested_sheet_file_is_missing(): void
+    {
+        Storage::fake('local');
+        [$professor] = $this->createProfessorWithGrade();
+        $folha = FolhaPonto::create([
+            'professor_id' => $professor->id,
+            'mes' => 3,
+            'ano' => 2026,
+            'arquivo_gerado' => 'folhas-ponto/ausente.docx',
+            'status' => 'gerada',
+        ]);
+
+        $this->postJson('/api/folhas-ponto/download-zip', [
+            'folha_ponto_ids' => [$folha->id],
+            'formato' => 'docx',
+        ])->assertNotFound();
+    }
+
+    public function test_it_downloads_a_zip_with_pdf_sheets(): void
+    {
+        Storage::fake('local');
+        [$professor] = $this->createProfessorWithGrade();
+        Storage::put('folhas-ponto/12345/ana-souza-03-2026.pdf', '%PDF synthetic test output');
+        $folha = FolhaPonto::create([
+            'professor_id' => $professor->id,
+            'mes' => 3,
+            'ano' => 2026,
+            'arquivo_gerado' => 'folhas-ponto/12345/ana-souza-03-2026.docx',
+            'arquivo_gerado_pdf' => 'folhas-ponto/12345/ana-souza-03-2026.pdf',
+            'status' => 'gerada',
+        ]);
+
+        $response = $this->post('/api/folhas-ponto/download-zip', [
+            'folha_ponto_ids' => [$folha->id],
+            'formato' => 'pdf',
+        ]);
+
+        $response->assertDownload('folhas-ponto.zip');
+        $zipPath = $response->baseResponse->getFile()->getPathname();
+        $this->temporaryFiles[] = $zipPath;
+
+        $zip = new ZipArchive;
+        $this->assertSame(true, $zip->open($zipPath));
+        $this->assertStringEndsWith('.pdf', $zip->getNameIndex(0));
+        $this->assertSame('%PDF synthetic test output', $zip->getFromIndex(0));
+        $zip->close();
+    }
+
     public function test_it_generates_a_pdf_when_the_converter_produces_the_file(): void
     {
         Storage::fake('local');
@@ -89,11 +199,11 @@ class FolhaPontoTest extends TestCase
         $response->assertJsonPath('download_url', "/api/folhas-ponto/{$folha->id}/download?formato=pdf");
     }
 
-    private function createProfessorWithGrade(): array
+    private function createProfessorWithGrade(string $matricula = '12345'): array
     {
         $professor = Professor::create([
             'nome' => 'Ana Souza',
-            'matricula' => '12345',
+            'matricula' => $matricula,
             'regime_juridico' => 'Efetivo',
         ]);
 

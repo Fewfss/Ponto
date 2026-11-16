@@ -85,8 +85,24 @@ export const professoresApi = {
     atualizar: (id, dados) => request(`/professores/${id}`, { method: "PATCH", json: dados }),
 };
 
+/* ---------------- disciplinas e aulas ---------------- */
+export const componentesApi = {
+    criar: (dados) => request("/componentes-curriculares", { method: "POST", json: dados }),
+    atualizar: (id, dados) => request(`/componentes-curriculares/${id}`, { method: "PATCH", json: dados }),
+    excluir: (id) => request(`/componentes-curriculares/${id}`, { method: "DELETE" }),
+};
+
+export const aulasApi = {
+    criar: (dados) => request("/aulas", { method: "POST", json: dados }),
+    atualizar: (id, dados) => request(`/aulas/${id}`, { method: "PATCH", json: dados }),
+    excluir: (id) => request(`/aulas/${id}`, { method: "DELETE" }),
+};
+
 /* ---------------- folhas de ponto ---------------- */
 export const folhasApi = {
+    /** GET /api/folhas-ponto/capabilities */
+    capacidades: () => request("/folhas-ponto/capabilities"),
+
     /**
      * POST /api/professores/{id}/folhas-ponto
      * dados: { mes (1-12), ano, grade_horaria_id, formato: "docx" | "pdf" }

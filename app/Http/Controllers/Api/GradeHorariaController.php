@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\ComponenteCurricular;
 use App\Models\GradeHoraria;
+use App\Models\Professor;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -27,6 +28,7 @@ class GradeHorariaController extends Controller
             'inicio' => ['sometimes', 'nullable', 'date'],
             'fim' => ['sometimes', 'nullable', 'date', 'after_or_equal:inicio'],
             'semestre' => ['sometimes', 'nullable', 'string', 'max:50'],
+            'regime' => ['sometimes', 'nullable', 'string', 'max:255'],
             'curso' => ['sometimes', 'nullable', 'string', 'max:255'],
             'periodo' => ['sometimes', 'nullable', Rule::in(['Manhã', 'Tarde', 'Noite'])],
             'status' => ['sometimes', 'nullable', 'string', 'max:255'],
@@ -59,6 +61,12 @@ class GradeHorariaController extends Controller
 
         if (! empty($filtros['semestre'])) {
             $query->where('semestre', $filtros['semestre']);
+        }
+
+        if (! empty($filtros['regime'])) {
+            $query->whereHas('professor', function ($query) use ($filtros) {
+                $query->where('regime_juridico', $filtros['regime']);
+            });
         }
 
         if (! empty($filtros['inicio'])) {
@@ -102,6 +110,8 @@ class GradeHorariaController extends Controller
             'opcoes' => [
                 'semestres' => GradeHoraria::query()->whereNotNull('semestre')->where('semestre', '<>', '')
                     ->distinct()->orderBy('semestre')->pluck('semestre')->values(),
+                'regimes' => Professor::query()->whereNotNull('regime_juridico')->where('regime_juridico', '<>', '')
+                    ->distinct()->orderBy('regime_juridico')->pluck('regime_juridico')->values(),
                 'cursos' => ComponenteCurricular::query()->whereNotNull('curso')->where('curso', '<>', '')
                     ->distinct()->orderBy('curso')->pluck('curso')->values(),
                 'periodos' => $periodos,

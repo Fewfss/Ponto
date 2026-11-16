@@ -85,6 +85,7 @@ export function adaptarGrade(g) {
 
     const aulas = (g.aulas ?? []).map((a) => ({
         id: a.id,
+        componenteId: a.componente_curricular_id,
         dia: a.dia_semana,
         periodo: PERIODO_LABEL[a.periodo] ?? a.periodo,
         inicio: hhmm(a.hora_inicio),

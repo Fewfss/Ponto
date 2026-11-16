@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Head } from "@inertiajs/react";
 import NavBar from "../components/items/NavBar.jsx";
 import Modal from "../components/items/Modal.jsx";
+import Filtro, { FILTRO_VAZIO } from "../components/items/Filtro.jsx";
 import Toolbar from "../components/items/Toolbar.jsx";
 import SearchBar from "../components/items/SearchBar.jsx";
 import FilterButton from "../components/items/FilterButton.jsx";
@@ -11,8 +12,6 @@ import useGrades from "../hooks/useGrades.js";
 import { aplicarAlteracoes, folhasApi } from "../services/api.js";
 import { alteracoes, dataBR, FOLHA_FIXOS, MESES } from "../utils/grade.js";
 import "../components/styles/Folha.css";
-
-const TODOS = "Todos";
 
 /* campos do formulário de edição, agrupados: [chave, rótulo, largura ("span2" | "span3")]
    Unidade, cidade, COD e comprovantes são texto fixo do modelo .docx, por isso não são editáveis. */
@@ -54,6 +53,9 @@ function Campo({ label, value, title }) {
 const ou = (v) => v || "—";
 
 function GradeCard({ g, selecionada, onSelect, onEdit }) {
+  const disciplinas = [...new Set(g.componentes.map((c) => c.disciplina.replace(/\s*\(.*\)$/, "")))].join(" · ");
+  const cursos = [...new Set(g.componentes.map((c) => c.curso).filter(Boolean))].join(", ");
+
   return (
     <article
       className="fp-card"
@@ -92,6 +94,10 @@ function GradeCard({ g, selecionada, onSelect, onEdit }) {
       <div className="fp-row">
         <Campo label="Semestre:" value={ou(g.semestre)} />
         <Campo label="Vigência:" value={`${dataBR(g.validadeInicio)} a ${dataBR(g.validadeFim)}`} />
+      </div>
+      <div className="fp-row">
+        <Campo label="Disciplinas:" value={ou(disciplinas)} />
+        <Campo label="Curso(s):" value={ou(cursos)} />
       </div>
       <div className="fp-row">
         <Campo label="Comprovante(s) Curricular(es)" value={FOLHA_FIXOS.comprovantes} />
@@ -161,82 +167,313 @@ function ModalEditar({ grade, onSave, onClose }) {
   );
 }
 
-/* ------------------------------------------------------------------
-   Modal: gerar nova folha de ponto a partir de uma grade
-   POST /api/professores/{id}/folhas-ponto → download_url
-------------------------------------------------------------------- */
+const STATUS_GERACAO = {
+  fila: "Na fila",
+  gerando: "Gerando…",
+  pronta: "Pronta",
+  erro: "Falhou",
+};
+const MAX_FOLHAS_POR_ZIP = 100;
+
 function ModalGerar({ grades, gradeInicial, onClose }) {
   const hoje = new Date();
-  const [gradeId, setGradeId] = useState(gradeInicial ?? grades[0]?.id ?? "");
-  const [mes, setMes] = useState(hoje.getMonth() + 1); // 1-12, como a API espera
+  const gradeInicialValida = grades.find((grade) => grade.id === gradeInicial);
+  const [mes, setMes] = useState(hoje.getMonth() + 1);
   const [ano, setAno] = useState(hoje.getFullYear());
   const [formato, setFormato] = useState("docx");
+  const [buscaProfessor, setBuscaProfessor] = useState("");
+  const [selecionados, setSelecionados] = useState(() => (
+    gradeInicialValida
+      ? { [gradeInicialValida.professorId]: gradeInicialValida.id }
+      : {}
+  ));
   const [gerando, setGerando] = useState(false);
   const [erros, setErros] = useState([]);
-  const [pronta, setPronta] = useState(null); // { url, formato, nome, mes, ano }
+  const [resultados, setResultados] = useState([]);
+  const [progresso, setProgresso] = useState(null);
+  const [pdfDisponivel, setPdfDisponivel] = useState(null);
+  const [erroDisponibilidadePdf, setErroDisponibilidadePdf] = useState("");
 
-  // qualquer mudança nos parâmetros invalida a folha já gerada
-  const alterar = (setter) => (e) => { setter(e.target.value); setPronta(null); setErros([]); };
+  const professores = useMemo(() => {
+    const porId = new Map();
 
-  const gerar = async () => {
-    const g = grades.find((x) => x.id === Number(gradeId));
-    if (!g) return;
-    if (!Number.isInteger(Number(ano)) || ano < 2000 || ano > 2100) {
-      setErros(["Informe um ano entre 2000 e 2100."]);
-      return;
+    grades.forEach((grade) => {
+      if (!porId.has(grade.professorId)) {
+        porId.set(grade.professorId, {
+          id: grade.professorId,
+          nome: grade.nome,
+          matricula: grade.matricula,
+          grades: [],
+        });
+      }
+
+      porId.get(grade.professorId).grades.push(grade);
+    });
+
+    return [...porId.values()].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+  }, [grades]);
+
+  const professoresVisiveis = useMemo(() => {
+    const termo = buscaProfessor.trim().toLocaleLowerCase("pt-BR");
+
+    return professores.filter((professor) =>
+      `${professor.nome} ${professor.matricula}`.toLocaleLowerCase("pt-BR").includes(termo)
+    );
+  }, [professores, buscaProfessor]);
+
+  const selecionadosVisiveis = professoresVisiveis.length > 0
+    && professoresVisiveis.every((professor) => selecionados[professor.id] !== undefined);
+  const falhas = resultados.filter((resultado) => resultado.status === "erro");
+  const prontas = resultados.filter((resultado) => resultado.status === "pronta" && resultado.folhaId);
+
+  useEffect(() => {
+    let ativo = true;
+
+    folhasApi.capacidades()
+      .then(({ pdf_disponivel: disponivel }) => {
+        if (typeof disponivel !== "boolean") {
+          throw new Error("Resposta inválida ao consultar os formatos disponíveis.");
+        }
+
+        if (ativo) setPdfDisponivel(disponivel);
+      })
+      .catch((erro) => {
+        if (ativo) setErroDisponibilidadePdf(erro.message);
+      });
+
+    return () => { ativo = false; };
+  }, []);
+
+  const alterar = (setter) => (e) => {
+    setter(e.target.value);
+    setErros([]);
+    setResultados([]);
+  };
+
+  const alternarProfessor = (professor, marcado) => {
+    setSelecionados((atuais) => {
+      const novos = { ...atuais };
+
+      if (marcado) {
+        novos[professor.id] = professor.grades[0].id;
+      } else {
+        delete novos[professor.id];
+      }
+
+      return novos;
+    });
+    setErros([]);
+    setResultados([]);
+  };
+
+  const selecionarVisiveis = () => {
+    setSelecionados((atuais) => {
+      const novos = { ...atuais };
+
+      professoresVisiveis.forEach((professor) => {
+        if (selecionadosVisiveis) {
+          delete novos[professor.id];
+        } else if (novos[professor.id] === undefined) {
+          novos[professor.id] = professor.grades[0].id;
+        }
+      });
+
+      return novos;
+    });
+    setResultados([]);
+  };
+
+  const alterarGradeProfessor = (professorId, gradeId) => {
+    setSelecionados((atuais) => ({ ...atuais, [professorId]: Number(gradeId) }));
+    setResultados([]);
+  };
+
+  const montarFila = () => {
+    const fila = Object.entries(selecionados).map(([professorId, gradeId]) => {
+      const professor = professores.find((item) => item.id === Number(professorId));
+      const grade = professor?.grades.find((item) => item.id === Number(gradeId));
+
+      if (!professor || !grade) {
+        return null;
+      }
+
+      return {
+        professorId: professor.id,
+        gradeId: grade.id,
+        nome: professor.nome,
+        matricula: professor.matricula,
+        semestre: grade.semestre,
+        status: "fila",
+      };
+    });
+
+    if (fila.some((item) => item === null)) {
+      setErros(["Uma ou mais grades selecionadas não estão disponíveis. Feche e abra a seleção novamente."]);
+      return [];
+    }
+
+    return fila;
+  };
+
+  const processarFila = async (fila, novaGeracao = false) => {
+    if (novaGeracao) {
+      setResultados(fila);
     }
 
     setGerando(true);
     setErros([]);
-    setPronta(null);
+
     try {
-      const { download_url: url } = await folhasApi.gerar(g.professorId, {
-        mes: Number(mes),
-        ano: Number(ano),
-        grade_horaria_id: g.id,
-        formato,
-      });
-      setPronta({ url, formato, nome: g.nome, mes: Number(mes), ano: Number(ano) });
-    } catch (e) {
-      const msgs = mensagensDoErro(e);
-      if (formato === "pdf") msgs.push("O PDF depende do LibreOffice no servidor. Se não estiver instalado, gere em Word (.docx).");
-      setErros(msgs);
+      for (const [indice, item] of fila.entries()) {
+        setProgresso({ atual: indice + 1, total: fila.length, nome: item.nome });
+        setResultados((atuais) => atuais.map((resultado) =>
+          resultado.professorId === item.professorId
+            ? { ...resultado, status: "gerando", erro: "" }
+            : resultado
+        ));
+
+        try {
+          const { folha_ponto: folhaPonto, download_url: url } = await folhasApi.gerar(item.professorId, {
+            mes: Number(mes),
+            ano: Number(ano),
+            grade_horaria_id: item.gradeId,
+            formato,
+          });
+          setResultados((atuais) => atuais.map((resultado) =>
+            resultado.professorId === item.professorId
+              ? { ...resultado, status: "pronta", url, folhaId: folhaPonto.id }
+              : resultado
+          ));
+        } catch (erro) {
+          const mensagem = formato === "pdf"
+            ? "Não foi possível gerar esta folha em PDF. Tente novamente ou escolha Word (.docx)."
+            : mensagensDoErro(erro).join(" ");
+
+          setResultados((atuais) => atuais.map((resultado) =>
+            resultado.professorId === item.professorId
+              ? { ...resultado, status: "erro", erro: mensagem }
+              : resultado
+          ));
+        }
+      }
     } finally {
       setGerando(false);
+      setProgresso(null);
     }
   };
 
+  const gerar = async () => {
+    const anoNumerico = Number(ano);
+
+    if (!Number.isInteger(anoNumerico) || anoNumerico < 2000 || anoNumerico > 2100) {
+      setErros(["Informe um ano entre 2000 e 2100."]);
+      return;
+    }
+    if (Object.keys(selecionados).length === 0) {
+      setErros(["Selecione ao menos um professor."]);
+      return;
+    }
+
+    const fila = montarFila();
+    if (fila.length > 0) {
+      await processarFila(fila, true);
+    }
+  };
+
+  const tentarFalhas = () => {
+    const fila = falhas.map(({ erro, url, status, ...item }) => ({ ...item, status: "fila" }));
+    processarFila(fila);
+  };
+
+  const nomeFormato = formato === "pdf" ? "PDF" : "Word (.docx)";
+
   return (
     <Modal
-      titulo="Gerar nova folha de ponto"
-      descricao="Escolha a grade e o mês de referência."
+      titulo={resultados.length > 0 ? "Resultado da geração" : "Gerar folhas de ponto"}
+      descricao={resultados.length > 0
+        ? "Confira o status e baixe cada folha gerada."
+        : "Selecione os professores e escolha o mês de referência."}
       onClose={gerando ? () => {} : onClose}
       rodape={
         <>
-          <ActionButton disabled={gerando} onClick={onClose}>Fechar</ActionButton>
-          <ActionButton variant="light" disabled={gerando || grades.length === 0} onClick={gerar}>
-            {gerando ? "Gerando…" : pronta ? "Gerar novamente" : "Gerar folha"}
+          <ActionButton disabled={gerando} onClick={onClose}>
+            {resultados.length > 0 ? "Concluir" : "Fechar"}
           </ActionButton>
+          {resultados.length === 0 && (
+            <ActionButton variant="light" disabled={gerando || grades.length === 0} onClick={gerar}>
+              {gerando ? "Gerando…" : "Gerar folhas"}
+            </ActionButton>
+          )}
+          {resultados.length > 0 && falhas.length > 0 && (
+            <ActionButton variant="light" disabled={gerando} onClick={tentarFalhas}>
+              {gerando ? "Gerando…" : `Tentar novamente (${falhas.length})`}
+            </ActionButton>
+          )}
         </>
       }
     >
       {grades.length === 0 ? (
-        <p className="fp-hint">Nenhuma grade importada. Importe uma grade na tela de Grade antes de gerar a folha.</p>
+        <p className="fp-hint">Nenhuma grade disponível com a busca e os filtros atuais. Ajuste-os ou importe uma grade na tela de Grade.</p>
+      ) : resultados.length > 0 ? (
+        <section className="fp-batch-result" aria-label="Resultados das folhas">
+          <p className="fp-batch-summary">
+            Competência: <b>{MESES[Number(mes) - 1]}/{ano}</b> · Formato: <b>{nomeFormato}</b>
+          </p>
+          {progresso && (
+            <p className="fp-hint" role="status">
+              Gerando folha {progresso.atual} de {progresso.total}: {progresso.nome}
+            </p>
+          )}
+          <ul className="fp-batch-list">
+            {resultados.map((resultado) => (
+              <li className={`fp-batch-item fp-batch-item--${resultado.status}`} key={resultado.professorId}>
+                <div>
+                  <strong>{resultado.nome}</strong>
+                  <span>Matrícula: {resultado.matricula || "—"} · Grade: {resultado.semestre || "sem semestre"}</span>
+                  <span className="fp-batch-status">{STATUS_GERACAO[resultado.status]}</span>
+                  {resultado.erro && <span className="fp-batch-error">{resultado.erro}</span>}
+                </div>
+                {resultado.status === "pronta" && (
+                  <a className="action-btn action-btn--light fp-download" href={resultado.url} download>
+                    Baixar folha
+                  </a>
+                )}
+              </li>
+            ))}
+          </ul>
+          {!gerando && prontas.length > 0 && (
+            <div className="fp-batch-downloads">
+              {prontas.length <= MAX_FOLHAS_POR_ZIP ? (
+                <form method="post" action="/api/folhas-ponto/download-zip" className="fp-batch-zip-form">
+                  <input type="hidden" name="formato" value={formato} />
+                  {prontas.map((resultado) => (
+                    <input
+                      key={resultado.folhaId}
+                      type="hidden"
+                      name="folha_ponto_ids[]"
+                      value={resultado.folhaId}
+                    />
+                  ))}
+                  <button type="submit" className="action-btn action-btn--light">
+                    Baixar {prontas.length} {prontas.length === 1 ? "folha" : "folhas"} em ZIP
+                  </button>
+                </form>
+              ) : (
+                <p className="fp-hint">
+                  O ZIP aceita até {MAX_FOLHAS_POR_ZIP} folhas por vez. Divida o lote; os downloads individuais continuam disponíveis.
+                </p>
+              )}
+              {falhas.length > 0 && (
+                <p className="fp-hint">O ZIP inclui somente as folhas geradas com sucesso.</p>
+              )}
+            </div>
+          )}
+        </section>
       ) : (
         <>
           <ListaErros mensagens={erros} />
 
           <div className="form-grid">
-            <label className="span3">
-              Grade
-              <select value={gradeId} onChange={alterar(setGradeId)} disabled={gerando}>
-                {grades.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.nome} — {g.matricula}{g.semestre ? ` · ${g.semestre}` : ""}
-                  </option>
-                ))}
-              </select>
-            </label>
             <label className="span2">
               Mês
               <select value={mes} onChange={alterar(setMes)} disabled={gerando}>
@@ -251,26 +488,91 @@ function ModalGerar({ grades, gradeInicial, onClose }) {
               Formato
               <select value={formato} onChange={alterar(setFormato)} disabled={gerando}>
                 <option value="docx">Word (.docx)</option>
-                <option value="pdf">PDF (requer LibreOffice no servidor)</option>
+                {pdfDisponivel && <option value="pdf">PDF</option>}
               </select>
             </label>
           </div>
 
-          <p className="fp-hint">
-            A folha é preenchida com a grade de aulas e os dados do cabeçalho (edite em “Editar”).
-            Gerar de novo para o mesmo professor e mês substitui a folha anterior.
-          </p>
-
-          {pronta && (
-            <div className="fp-ok" role="status">
-              <p>
-                Folha de <b>{MESES[pronta.mes - 1]}/{pronta.ano}</b> de {pronta.nome} gerada.
-              </p>
-              <a className="action-btn action-btn--light fp-download" href={pronta.url} download>
-                Baixar {pronta.formato === "pdf" ? "PDF" : "Word (.docx)"}
-              </a>
+          <section className="fp-batch-select" aria-label="Selecionar professores">
+            <div className="fp-batch-select-head">
+              <h3>Professores</h3>
+              <span>{Object.keys(selecionados).length} selecionado(s)</span>
             </div>
+            <label className="fp-batch-search">
+              Buscar professor
+              <input
+                type="search"
+                value={buscaProfessor}
+                onChange={(e) => setBuscaProfessor(e.target.value)}
+                placeholder="Nome ou matrícula"
+                disabled={gerando}
+              />
+            </label>
+            <ActionButton
+              disabled={gerando || professoresVisiveis.length === 0}
+              onClick={selecionarVisiveis}
+            >
+              {selecionadosVisiveis ? "Desmarcar visíveis" : "Selecionar visíveis"}
+            </ActionButton>
+            <ul className="fp-professor-list">
+              {professoresVisiveis.map((professor) => {
+                const gradeSelecionada = selecionados[professor.id];
+                const marcado = gradeSelecionada !== undefined;
+
+                return (
+                  <li key={professor.id} className="fp-professor-item">
+                    <label className="fp-professor-check">
+                      <input
+                        type="checkbox"
+                        checked={marcado}
+                        onChange={(e) => alternarProfessor(professor, e.target.checked)}
+                        disabled={gerando}
+                      />
+                      <span>
+                        <strong>{professor.nome}</strong>
+                        <small>Matrícula: {professor.matricula || "—"}</small>
+                      </span>
+                    </label>
+                    {marcado && (
+                      <label className="fp-professor-grade">
+                        Grade usada
+                        <select
+                          value={gradeSelecionada}
+                          onChange={(e) => alterarGradeProfessor(professor.id, e.target.value)}
+                          disabled={gerando || professor.grades.length === 1}
+                        >
+                          {professor.grades.map((grade) => (
+                            <option key={grade.id} value={grade.id}>
+                              {grade.semestre || "Sem semestre"} · {dataBR(grade.validadeInicio)} a {dataBR(grade.validadeFim)}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    )}
+                  </li>
+                );
+              })}
+              {professoresVisiveis.length === 0 && <li className="fp-hint">Nenhum professor encontrado.</li>}
+            </ul>
+          </section>
+
+          {pdfDisponivel === null && !erroDisponibilidadePdf && (
+            <p className="fp-hint" role="status">Verificando disponibilidade de PDF…</p>
           )}
+          {pdfDisponivel === false && (
+            <p className="fp-hint" role="status">PDF não está disponível neste ambiente. Gere a folha em Word.</p>
+          )}
+          {erroDisponibilidadePdf && (
+            <p className="fp-hint" role="alert">
+              Não foi possível verificar se PDF está disponível: {erroDisponibilidadePdf}
+              {" "}A geração em Word continua disponível.
+            </p>
+          )}
+
+          <p className="fp-hint">
+            Todas as folhas usarão o mesmo mês, ano e formato. Para professores com mais de uma grade, selecione qual será usada.
+            Uma nova geração para o mesmo professor e mês substitui a folha anterior.
+          </p>
         </>
       )}
     </Modal>
@@ -281,39 +583,32 @@ function ModalGerar({ grades, gradeInicial, onClose }) {
    Tela principal
 ------------------------------------------------------------------- */
 export default function Folha() {
-  const { grades, status, erro, recarregar } = useGrades();
+  const { grades, opcoes, status, erro, recarregar } = useGrades();
   const [busca, setBusca] = useState("");
-  const [regime, setRegime] = useState(TODOS);
+  const [filtro, setFiltro] = useState(FILTRO_VAZIO);
   const [filtroAberto, setFiltroAberto] = useState(false);
   const [selecionada, setSelecionada] = useState(null);
   const [editando, setEditando] = useState(null);
   const [gerando, setGerando] = useState(false);
   const [aviso, setAviso] = useState("");
+  const ultimoFiltroSolicitado = useRef({ busca, filtro });
 
-  const regimes = useMemo(
-    () => [TODOS, ...[...new Set(grades.map((g) => g.contrato).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"))],
-    [grades],
-  );
+  const filtrosDaTela = { q: busca.trim(), ...filtro };
+  const visiveis = grades;
+  const filtrosAtivos = Object.values(filtro).filter(Boolean).length;
 
-  const visiveis = useMemo(() => {
-    const q = busca.trim().toLowerCase();
-    return grades.filter((g) => {
-      const okRegime = regime === TODOS || g.contrato === regime;
-      const texto = [
-        g.nome, g.matricula, g.contrato, g.categoria, g.semestre,
-        g.horaAulaSemanal, g.horaAtividade, g.haeProjeto, g.haeCoordenacao,
-      ].join(" ").toLowerCase();
-      return okRegime && (!q || texto.includes(q));
-    });
-  }, [grades, busca, regime]);
-
-  // Esc fecha o menu de regime
   useEffect(() => {
-    if (!filtroAberto) return;
-    const esc = (e) => e.key === "Escape" && setFiltroAberto(false);
-    document.addEventListener("keydown", esc);
-    return () => document.removeEventListener("keydown", esc);
-  }, [filtroAberto]);
+    if (ultimoFiltroSolicitado.current.busca === busca && ultimoFiltroSolicitado.current.filtro === filtro) {
+      return;
+    }
+
+    ultimoFiltroSolicitado.current = { busca, filtro };
+    const timeout = setTimeout(() => {
+      recarregar({ filtros: filtrosDaTela });
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  }, [busca, filtro, recarregar]);
 
   // Professor e grade são endpoints separados: `alteracoes` calcula o que mudou.
   const salvar = async (original, form) => {
@@ -326,7 +621,7 @@ export default function Folha() {
     try {
       await aplicarAlteracoes(original, mudancas);
     } finally {
-      await recarregar({ silencioso: true }); // também em falha parcial
+      await recarregar({ silencioso: true, filtros: filtrosDaTela }); // também em falha parcial
     }
 
     setEditando(null);
@@ -340,30 +635,17 @@ export default function Folha() {
 
       <main id="conteudo" tabIndex={-1} className="fp" aria-busy={status === "carregando"}>
         <Toolbar>
-          <SearchBar value={busca} onChange={(e) => setBusca(e.target.value)} />
-
-          <div className="fp-filter-wrap">
-            <FilterButton
-              count={regime === TODOS ? 0 : 1}
-              aria-expanded={filtroAberto}
-              onClick={() => setFiltroAberto((v) => !v)}
-            />
-            {filtroAberto && (
-              <div className="fp-menu" role="group" aria-label="Filtrar por regime jurídico">
-                {regimes.map((r) => (
-                  <button key={r} aria-pressed={regime === r}
-                          onClick={() => { setRegime(r); setFiltroAberto(false); }}>
-                    {r === TODOS ? "Todos os regimes" : r}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <SearchBar value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Pesquise por professor, matrícula, disciplina ou curso..." />
+          <FilterButton count={filtrosAtivos} onClick={() => setFiltroAberto(true)} />
 
           <ActionButton variant="light" icon={<IconNewDoc />} onClick={() => setGerando(true)}>
             Gerar Nova
           </ActionButton>
         </Toolbar>
+
+        {filtroAberto && (
+          <Filtro valores={filtro} opcoes={opcoes} onAplicar={setFiltro} onClose={() => setFiltroAberto(false)} />
+        )}
 
         {aviso && (
           <p className="fp-toast" role="status">
@@ -402,7 +684,7 @@ export default function Folha() {
               ))}
               {visiveis.length === 0 && (
                 <p className="fp-empty">
-                  {grades.length === 0
+                  {filtrosAtivos === 0 && !busca.trim()
                     ? "Nenhuma grade importada ainda. Importe uma na tela de Grade para gerar folhas."
                     : "Nenhuma grade encontrada. Ajuste a busca ou os filtros."}
                 </p>

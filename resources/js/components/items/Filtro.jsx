@@ -5,7 +5,7 @@ import ActionButton from "./ActionButton.jsx";
 import { IconFilter } from "./Icons.jsx";
 import "../styles/Filtro.css";
 
-export const FILTRO_VAZIO = { inicio: "", fim: "", semestre: "", curso: "", periodo: "", status: "" };
+export const FILTRO_VAZIO = { inicio: "", fim: "", semestre: "", regime: "", curso: "", periodo: "", status: "" };
 
 function Filtro({ valores = FILTRO_VAZIO, opcoes = {}, onAplicar, onClose }) {
     const painelRef = useRef(null);
@@ -13,7 +13,7 @@ function Filtro({ valores = FILTRO_VAZIO, opcoes = {}, onAplicar, onClose }) {
     useDialogA11y(painelRef, onClose);
 
     const set = (k) => (e) => setRascunho((r) => ({ ...r, [k]: e.target.value }));
-    const { semestres = [], cursos = [], periodos = [], statuses = [] } = opcoes;
+    const { semestres = [], regimes = [], cursos = [], periodos = [], statuses = [] } = opcoes;
 
     const aplicar = (e) => {
         e.preventDefault();
@@ -52,6 +52,16 @@ function Filtro({ valores = FILTRO_VAZIO, opcoes = {}, onAplicar, onClose }) {
                             {semestres.map((s) => <option key={s} value={s}>{s}</option>)}
                         </select>
                     </label>
+
+                    {regimes.length > 0 && (
+                        <label className="filtro-field">
+                            <span>Regime jurídico</span>
+                            <select value={rascunho.regime} onChange={set("regime")}>
+                                <option value="">Todos os regimes</option>
+                                {regimes.map((regime) => <option key={regime} value={regime}>{regime}</option>)}
+                            </select>
+                        </label>
+                    )}
 
                     <label className="filtro-field">
                         <span>Curso</span>

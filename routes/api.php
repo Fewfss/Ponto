@@ -12,7 +12,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/grades', [GradeImportController::class, 'store']);
 
+Route::get('/folhas-ponto/capabilities', [FolhaPontoController::class, 'capabilities']);
 Route::post('/professores/{professor}/folhas-ponto', [FolhaPontoController::class, 'store']);
+Route::post('/folhas-ponto/download-zip', [FolhaPontoController::class, 'downloadZip']);
 Route::get('/folhas-ponto/{folhaPonto}/download', [FolhaPontoController::class, 'download'])
     ->name('folhas-ponto.download');
 
@@ -28,6 +30,7 @@ Route::match(['put', 'patch'], '/grades-horarias/{gradeHoraria}', [GradeHorariaC
 Route::delete('/grades-horarias/{gradeHoraria}', [GradeHorariaController::class, 'destroy']);
 
 Route::apiResource('componentes-curriculares', ComponenteCurricularController::class)
+    ->parameters(['componentes-curriculares' => 'componenteCurricular'])
     ->only(['index', 'store', 'show', 'update', 'destroy']);
 
 Route::apiResource('aulas', AulaController::class)

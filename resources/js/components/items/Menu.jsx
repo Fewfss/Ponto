@@ -91,9 +91,9 @@ function Menu({ onClose }) {
                         href="/pesquisa"
                         aria-current={atual("/pesquisa")}
                         className={`menu-option ${
-                            hoveredItem === "folhas" ? "active" : ""
+                            hoveredItem === "pesquisa" ? "active" : ""
                         }`}
-                        onMouseEnter={() => setHoveredItem("folhas")}
+                        onMouseEnter={() => setHoveredItem("pesquisa")}
                         onClick={onClose}
                     >
                         <svg viewBox="0 0 24 24" className="menu-icon" aria-hidden="true">

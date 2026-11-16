@@ -1,6 +1,6 @@
+import { Head } from "@inertiajs/react";
 import CardAvaliacao from "../components/items/CardAvaliacao";
 import "../components/styles/Pesquisa.css";
-import "../components/items/NavBar.jsx";
 import NavBar from "../components/items/NavBar.jsx";
 
 export default function Pesquisa() {
@@ -10,6 +10,7 @@ export default function Pesquisa() {
 
   return (
       <div className="avaliacao-page">
+          <Head title="Pesquisa de Satisfação" />
           <NavBar/>
       <main className="avaliacao-main">
         <CardAvaliacao onSubmit={handleSubmit} />

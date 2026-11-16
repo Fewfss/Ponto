@@ -34,12 +34,11 @@ class FolhaPontoGenerator
 
     public function __construct(
         private readonly DocxToPdfConverter $conversorPdf,
-    ) {
-    }
+    ) {}
 
     /**
-     * @param array<int, string> $feriadosExtras datas "YYYY-MM-DD" a tratar como feriado além dos
-     *        já conhecidos (ex.: Carnaval, recesso da faculdade) — ficam cinza na frequência.
+     * @param  array<int, string>  $feriadosExtras  datas "YYYY-MM-DD" a tratar como feriado além dos
+     *                                              já conhecidos (ex.: Carnaval, recesso da faculdade) — ficam cinza na frequência.
      */
     public function gerar(Professor $professor, GradeHoraria $grade, int $mes, int $ano, array $feriadosExtras = []): FolhaPonto
     {
@@ -47,14 +46,14 @@ class FolhaPontoGenerator
 
         if (! is_file($caminhoTemplate)) {
             throw new RuntimeException(
-                'Modelo da folha de ponto não encontrado. Coloque o arquivo em: ' . $caminhoTemplate
+                'Modelo da folha de ponto não encontrado. Coloque o arquivo em: '.$caminhoTemplate
             );
         }
 
         // Os valores vêm de campos digitados (ex.: HAE, categoria): escapa &, < e > no XML.
         Settings::setOutputEscapingEnabled(true);
 
-        $arquivoTemp = tempnam(sys_get_temp_dir(), 'folha_') . '.docx';
+        $arquivoTemp = tempnam(sys_get_temp_dir(), 'folha_').'.docx';
 
         $processor = new TemplateProcessor($caminhoTemplate);
         $processor->setValue('professor_nome', $professor->nome ?? '');
@@ -102,10 +101,10 @@ class FolhaPontoGenerator
     {
         $caminhoDocxAbsoluto = Storage::path($folha->arquivo_gerado);
 
-        $pastaTemp = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'folha_pdf_' . uniqid();
+        $pastaTemp = sys_get_temp_dir().DIRECTORY_SEPARATOR.'folha_pdf_'.uniqid();
         mkdir($pastaTemp);
 
-        $copiaTemp = $pastaTemp . DIRECTORY_SEPARATOR . basename($caminhoDocxAbsoluto);
+        $copiaTemp = $pastaTemp.DIRECTORY_SEPARATOR.basename($caminhoDocxAbsoluto);
         copy($caminhoDocxAbsoluto, $copiaTemp);
 
         $caminhoPdfGerado = $this->conversorPdf->converter($copiaTemp);
@@ -120,6 +119,11 @@ class FolhaPontoGenerator
         $folha->update(['arquivo_gerado_pdf' => $nomeArquivoPdf]);
 
         return $folha->fresh();
+    }
+
+    public function pdfDisponivel(): bool
+    {
+        return $this->conversorPdf->estaDisponivel();
     }
 
     private function preencherGradeHoraria(DocxTableEditor $editor, GradeHoraria $grade): void
@@ -176,9 +180,9 @@ class FolhaPontoGenerator
             }
 
             if (preg_match('/^[IVXLCDM]+$/i', $palavra)) {
-                $partes[] = mb_strtoupper($palavra) . '.';
+                $partes[] = mb_strtoupper($palavra).'.';
             } else {
-                $partes[] = mb_strtoupper(mb_substr($palavra, 0, 1)) . '.';
+                $partes[] = mb_strtoupper(mb_substr($palavra, 0, 1)).'.';
             }
         }
 
@@ -200,7 +204,7 @@ class FolhaPontoGenerator
     }
 
     /**
-     * @param array<int, string> $feriados dia do mês => nome do feriado
+     * @param  array<int, string>  $feriados  dia do mês => nome do feriado
      */
     private function atualizarCalendarioMensal(
         DocxTableEditor $editor,
@@ -223,6 +227,7 @@ class FolhaPontoGenerator
 
             if ($numeroDoDia > $totalDiasDoMes) {
                 $editor->removerLinha($linha);
+
                 continue;
             }
 
@@ -246,7 +251,7 @@ class FolhaPontoGenerator
 
     private function lerDocumentXmlDoZip(string $caminhoDocx): string
     {
-        $zip = new ZipArchive();
+        $zip = new ZipArchive;
         $zip->open($caminhoDocx);
         $conteudo = $zip->getFromName('word/document.xml');
         $zip->close();
@@ -256,7 +261,7 @@ class FolhaPontoGenerator
 
     private function escreverDocumentXmlNoZip(string $caminhoDocx, string $xml): void
     {
-        $zip = new ZipArchive();
+        $zip = new ZipArchive;
         $zip->open($caminhoDocx);
         $zip->addFromString('word/document.xml', $xml);
         $zip->close();

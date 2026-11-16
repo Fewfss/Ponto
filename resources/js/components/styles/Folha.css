@@ -16,33 +16,6 @@
 .folha { background: #000; min-height: 100vh; }
 
 /* ---------- filtro por regime ---------- */
-.fp-filter-wrap { position: relative; }
-.fp-menu {
-  position: absolute;
-  top: calc(var(--ctl) + 12px);
-  left: 0;
-  z-index: 5;
-  min-width: 220px;
-  padding: 8px;
-  border-radius: 16px;
-  background: #151515;
-  border: 1px solid var(--line);
-  display: grid;
-  gap: 2px;
-}
-.fp-menu button {
-  text-align: left;
-  padding: 10px 12px;
-  border: 0;
-  border-radius: 10px;
-  background: transparent;
-  color: #fff;
-  font-size: var(--fs);
-  cursor: pointer;
-}
-.fp-menu button:hover,
-.fp-menu button[aria-pressed="true"] { background: #2a2a2a; }
-
 /* ---------- card da grade ---------- */
 .fp-list { display: grid; gap: clamp(28px, 1.8vw, 34px); margin-top: clamp(44px, 2.8vw, 54px); }
 
@@ -103,10 +76,64 @@
 }
 .fp-ok p { margin: 0; }
 .fp-download { text-decoration: none; }
+.fp-result { gap: 20px; padding: clamp(22px, 3vw, 36px); }
+.fp-result h3 { margin: 0; font-size: var(--fs-lg); font-weight: 500; }
+.fp-result dl { width: 100%; margin: 0; display: grid; gap: 12px; }
+.fp-result dl > div { display: grid; grid-template-columns: minmax(130px, 0.4fr) 1fr; gap: 16px; }
+.fp-result dt { color: var(--muted); }
+.fp-result dd { margin: 0; overflow-wrap: anywhere; }
+.fp-result .fp-download { min-height: var(--ctl); display: inline-flex; align-items: center; }
+
+.fp-batch-select { display: grid; gap: 14px; margin-top: 20px; }
+.fp-batch-select-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.fp-batch-select-head h3 { margin: 0; font-size: var(--fs-lg); font-weight: 500; }
+.fp-batch-select-head span { color: var(--muted); font-size: var(--fs); }
+.fp-batch-search { display: grid; gap: 6px; color: var(--muted); font-size: var(--fs); font-weight: 500; }
+.fp-batch-search input {
+  width: 100%;
+  min-width: 0;
+  height: clamp(42px, 2.2vw, 46px);
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #161616;
+  color: #fff;
+  color-scheme: dark;
+  font-size: var(--fs);
+  font-weight: 300;
+}
+.fp-batch-search input::placeholder { color: #888; }
+.fp-batch-search input:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+.fp-professor-list { display: grid; gap: 10px; max-height: 320px; overflow: auto; margin: 0; padding: 0; list-style: none; }
+.fp-professor-item { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 0.8fr); gap: 14px; align-items: center; padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: #151515; }
+.fp-professor-check { display: flex; align-items: center; gap: 12px; min-width: 0; cursor: pointer; }
+.fp-professor-check input { flex: none; width: 18px; height: 18px; accent-color: #fff; }
+.fp-professor-check span { display: grid; min-width: 0; gap: 4px; }
+.fp-professor-check strong { overflow-wrap: anywhere; }
+.fp-professor-check small { color: var(--muted); }
+.fp-professor-grade { display: grid; gap: 6px; color: var(--muted); font-size: var(--fs); }
+.fp-batch-result { display: grid; gap: 16px; }
+.fp-batch-summary { margin: 0; color: var(--muted); }
+.fp-batch-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.fp-batch-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: #151515; }
+.fp-batch-item > div { display: grid; gap: 5px; min-width: 0; }
+.fp-batch-item > div > span { color: var(--muted); overflow-wrap: anywhere; }
+.fp-batch-item--pronta { border-color: #2f6b3d; }
+.fp-batch-item--erro { border-color: #7a2e2e; }
+.fp-batch-status { font-weight: 500; }
+.fp-batch-item--pronta .fp-batch-status { color: #9be7a8; }
+.fp-batch-item--erro .fp-batch-status,
+.fp-batch-item .fp-batch-error { color: #ffb4b4; }
+.fp-batch-downloads { display: grid; gap: 8px; }
+.fp-batch-zip-form { margin: 0; }
 
 @media (max-width: 640px) {
   .fp-row:first-of-type { padding-right: 0; }
   .fp-edit { position: static; justify-self: start; }
   .fp-field { white-space: normal; }
+  .fp-result dl > div { grid-template-columns: 1fr; gap: 4px; }
+  .fp-professor-item,
+  .fp-batch-item { grid-template-columns: 1fr; }
+  .fp-batch-item .fp-download { justify-self: start; }
 }
 @media (prefers-reduced-motion: reduce) { .fp * { transition: none !important; } }
