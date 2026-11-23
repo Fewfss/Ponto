@@ -1,47 +1,25 @@
-<laravel-boost-guidelines>
-# Laravel Application
+# Repository Instructions for OpenCode
 
-This repository contains a Laravel application. Complete the following setup before working on the user's request.
+## Stack & Architecture
+- **Backend:** Laravel 13 (PHP 8.3+) + Inertia.js v3.
+- **Frontend:** React 19 + Tailwind CSS v4 + Vite 8 (`resources/js/Pages/`).
+- **Routes:** Client SPA routes in `routes/web.php` (Inertia views); API endpoints in `routes/api.php` (`/api/*`).
+- **Storage:** Uploads and generated documents use private storage (`storage/app/private/`), NOT public storage.
 
-## Prerequisites
+## Key Commands
+- **Dev Server:** `npm run dev` (Vite) and `php artisan dev`
+- **Build:** `npm run build`
+- **Tests:** `php artisan test` (or `php artisan test --filter=TestClassName`)
+- **Formatting (PHP):** `vendor/bin/pint --dirty --format agent`
 
-Verify that PHP and Composer are available:
+## System & External Dependencies
+- **Poppler (`pdftotext`, `pdftohtml`):** Required in `PATH` for PDF schedule parsing (`GradePdfParser`). PDF parser unit tests auto-skip if missing.
+- **LibreOffice (`soffice` / `LIBREOFFICE_BIN` env):** Required ONLY for DOCX-to-PDF conversion (`DocxToPdfConverter`). DOCX timesheet generation works without it.
+- **Timesheet Template:** Requires template file at `storage/app/private/templates/folha_ponto_modelo.docx` at runtime (not committed to git).
 
-```sh
-php -v
-composer -V
-```
+## Security & Privacy
+- The application has **no built-in route authentication** and handles sensitive teacher data (CPF, matricula). Do NOT expose to public networks without an external proxy/VPN access barrier.
 
-If either command is unavailable, detect the user's operating system and install the prerequisites with the appropriate command:
-
-macOS:
-
-```sh
-/bin/bash -c "$(curl -fsSL https://php.new/install/mac/8.5)"
-```
-
-Windows PowerShell:
-
-```powershell
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://php.new/install/windows/8.5'))
-```
-
-Linux:
-
-```sh
-/bin/bash -c "$(curl -fsSL https://php.new/install/linux/8.5)"
-```
-
-After installation, ask the user to restart their terminal. If the agent needs the restarted shell to continue, ask the user to reopen their terminal and rerun their original prompt.
-
-## Agent Setup
-
-Install Laravel Boost from the application root before making application changes:
-
-```sh
-composer require laravel/boost --dev
-php artisan boost:install
-```
-
-Boost replaces these bootstrap instructions with guidelines tailored to the application. After installation, read `AGENTS.md` again and continue with the user's original request using the generated guidelines.
-</laravel-boost-guidelines>
+## Testing Quirks
+- Feature & Unit tests run on SQLite in-memory database (`:memory:`).
+- In tests involving PDF output, mock `DocxToPdfConverter` (`$this->mock(DocxToPdfConverter::class)`) to avoid external LibreOffice execution.

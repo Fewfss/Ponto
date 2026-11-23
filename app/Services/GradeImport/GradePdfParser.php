@@ -18,15 +18,31 @@ class GradePdfParser implements GradeParserInterface
 
     private const TOLERANCIA_COLUNA_DIA = 80;
 
+    /**
+     * Posição horizontal (em unidades do pdftohtml) da coluna "Período" da tabela "Horas Aulas",
+     * medida no PDF oficial. As demais colunas são localizadas em relação a ela.
+     */
+    private const PERIODO_X_REFERENCIA = 604;
+
+    private const TOLERANCIA_COLUNA_PERIODO = 60;
+
     public function parse(string $pdfPath): array
     {
         $textoLinear = $this->pdftotext($pdfPath);
+        $elementos = $this->pdftohtmlElementos($pdfPath);
+
+        // A tabela de disciplinas é lida pela POSIÇÃO de cada texto (nomes de curso longos grudam
+        // na coluna seguinte e quebram a leitura por espaços); o texto linear fica como reserva.
+        $componentes = $this->extrairComponentesPosicionais($elementos);
+        if ($componentes === []) {
+            $componentes = $this->extrairComponentesCurriculares($textoLinear);
+        }
 
         return [
             'professor' => $this->extrairProfessor($textoLinear),
             'grade' => $this->extrairDadosGrade($textoLinear),
-            'componentes' => $this->extrairComponentesCurriculares($textoLinear),
-            'aulas' => $this->extrairAulasPosicionais($pdfPath),
+            'componentes' => $componentes,
+            'aulas' => $this->extrairAulasPosicionais($elementos),
         ];
     }
 
@@ -69,6 +85,7 @@ class GradePdfParser implements GradeParserInterface
                 }
 
                 $elementos[] = [
+                    'page' => (int) $page['number'],
                     'top' => (int) $text['top'],
                     'left' => (int) $text['left'],
                     'width' => (int) $text['width'],
@@ -143,11 +160,21 @@ class GradePdfParser implements GradeParserInterface
 
         foreach ($linhas as $linha) {
             // Ex.: "ESPANHOL I (Determinada)     Comércio Exterior     Tarde   Ministrando   2"
-            if (! preg_match(
-                '/^(?<disciplina>.+?)\s{2,}(?<curso>.+?)\s{2,}(?<periodo>Manh[ãa]|Tarde|Noite)\s{2,}(?<status>\S+)\s{2,}(?<qtde>\d+)\s*$/u',
-                trim($linha),
-                $m
-            )) {
+            $linha = trim($linha);
+            if (
+                ! preg_match(
+                    '/^(?<disciplina>.+?)\s{2,}(?<curso>.+?)\s{2,}(?<periodo>Manh[ãa]|Tarde|Noite)\s{2,}(?<status>\S+)\s{2,}(?<qtde>\d+)\s*$/u',
+                    $linha,
+                    $m
+                )
+                // Curso longo encosta na coluna "Período" e sobra só 1 espaço entre eles; nesse caso
+                // a disciplina é o que vai até o ")" do "(Determinada)".
+                && ! preg_match(
+                    '/^(?<disciplina>.+?\([^)]*\))\s+(?<curso>.+?)\s+(?<periodo>Manh[ãa]|Tarde|Noite)\s+(?<status>\S+)\s+(?<qtde>\d+)\s*$/u',
+                    $linha,
+                    $m
+                )
+            ) {
                 continue;
             }
 
@@ -161,6 +188,107 @@ class GradePdfParser implements GradeParserInterface
         }
 
         return $componentes;
+    }
+
+    /**
+     * Lê a tabela "Horas Aulas" pela posição dos textos (pdftohtml): cada linha é ancorada pelo
+     * período (Manhã/Tarde/Noite) na coluna "Período" e as demais células são atribuídas às
+     * colunas pela posição horizontal em que COMEÇAM, mesmo que um curso longo invada a coluna
+     * ao lado ou quebre em duas linhas.
+     *
+     * @param array<int, array{page: int, top: int, left: int, width: int, text: string}> $elementos
+     * @return array<int, array{disciplina: string, curso: ?string, periodo: string, status: ?string, quantidade_aulas: int}>
+     */
+    private function extrairComponentesPosicionais(array $elementos): array
+    {
+        $ancoras = [];
+
+        foreach ($elementos as $el) {
+            $periodo = $this->periodoDoTexto($el['text']);
+
+            if ($periodo === null || abs($el['left'] - self::PERIODO_X_REFERENCIA) > self::TOLERANCIA_COLUNA_PERIODO) {
+                continue;
+            }
+
+            // Só vale como linha da tabela se houver, na mesma altura e bem à direita, a coluna Qtde (um número).
+            foreach ($elementos as $outro) {
+                if (
+                    $outro['page'] === $el['page']
+                    && abs($outro['top'] - $el['top']) <= 8
+                    && $outro['left'] >= $el['left'] + 150
+                    && preg_match('/^\d+$/', $outro['text'])
+                ) {
+                    $ancoras[] = $el + ['periodo' => $periodo];
+                    break;
+                }
+            }
+        }
+
+        usort($ancoras, fn ($a, $b) => [$a['page'], $a['top']] <=> [$b['page'], $b['top']]);
+
+        $componentes = [];
+
+        foreach ($ancoras as $i => $ancora) {
+            $p = $ancora['left'];
+            $proxima = isset($ancoras[$i + 1]) && $ancoras[$i + 1]['page'] === $ancora['page'] ? $ancoras[$i + 1] : null;
+            $inicioDaLinha = $ancora['top'] - 10;
+            $fimDaLinha = $proxima !== null ? $proxima['top'] - 10 : $ancora['top'] + 35;
+
+            $celulas = ['disciplina' => [], 'curso' => [], 'status' => [], 'qtde' => []];
+
+            foreach ($elementos as $el) {
+                if ($el['page'] !== $ancora['page'] || $el['top'] < $inicioDaLinha || $el['top'] >= $fimDaLinha) {
+                    continue;
+                }
+
+                $coluna = match (true) {
+                    $el['left'] < $p - 324 => 'disciplina',
+                    $el['left'] < $p - 15 => 'curso',
+                    $el['left'] < $p + 40 => null, // a própria célula de período
+                    $el['left'] < $p + 176 => 'status',
+                    default => 'qtde',
+                };
+
+                if ($coluna !== null) {
+                    $celulas[$coluna][] = $el;
+                }
+            }
+
+            $texto = function (array $lista): string {
+                usort($lista, fn ($a, $b) => [$a['top'], $a['left']] <=> [$b['top'], $b['left']]);
+
+                return trim(implode(' ', array_column($lista, 'text')));
+            };
+
+            $disciplina = $texto($celulas['disciplina']);
+            if ($disciplina === '') {
+                continue;
+            }
+
+            $componentes[] = [
+                'disciplina' => $disciplina,
+                'curso' => $texto($celulas['curso']) ?: null,
+                'periodo' => $ancora['periodo'],
+                'status' => $texto($celulas['status']) ?: null,
+                'quantidade_aulas' => (int) preg_replace('/\D+/', '', $texto($celulas['qtde'])),
+            ];
+        }
+
+        return $componentes;
+    }
+
+    /** "Manhã"/"Manha", "Tarde" ou "Noite" (sem diferenciar acento ou maiúsculas) -> manha|tarde|noite. */
+    private function periodoDoTexto(string $texto): ?string
+    {
+        $t = mb_strtolower(trim(preg_replace('/[\x{0300}-\x{036F}]/u', '', $texto) ?? $texto));
+        $t = strtr($t, ['ã' => 'a', 'á' => 'a']);
+
+        return match ($t) {
+            'manha' => 'manha',
+            'tarde' => 'tarde',
+            'noite' => 'noite',
+            default => null,
+        };
     }
 
     private function normalizarPeriodo(string $periodo): string
@@ -180,10 +308,8 @@ class GradePdfParser implements GradeParserInterface
     /**
      * @return array<int, array{disciplina: string, dia_semana: string, periodo: string, hora_inicio: string, hora_fim: string, codigo_op: ?string}>
      */
-    private function extrairAulasPosicionais(string $pdfPath): array
+    private function extrairAulasPosicionais(array $elementos): array
     {
-        $elementos = $this->pdftohtmlElementos($pdfPath);
-
         $aulas = [];
         foreach ($elementos as $el) {
             // Localiza as "caixinhas" de horário, no formato "HH:MM | HH:MM".

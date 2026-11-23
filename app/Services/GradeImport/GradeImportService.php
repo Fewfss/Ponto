@@ -19,7 +19,13 @@ class GradeImportService
      */
     public function importar(array $dados, string $caminhoArquivoArmazenado): GradeHoraria
     {
-        return DB::transaction(function () use ($dados, $caminhoArquivoArmazenado) {
+        // Confere disciplinas x aulas antes de gravar: nada some em silêncio, e as divergências
+        // viram avisos (guardados em dados_brutos.avisos) para o usuário revisar.
+        $conciliado = ConciliacaoDeDisciplinas::conciliar($dados['componentes'] ?? [], $dados['aulas'] ?? []);
+        $componentes = $conciliado['componentes'];
+        $dados['avisos'] = $conciliado['avisos'];
+
+        return DB::transaction(function () use ($dados, $componentes, $caminhoArquivoArmazenado) {
             $professor = Professor::updateOrCreate(
                 ['matricula' => $dados['professor']['matricula']],
                 [
@@ -34,23 +40,23 @@ class GradeImportService
                 'semestre' => $dados['grade']['semestre'],
                 'validade_inicio' => $this->paraData($dados['grade']['validade_inicio']),
                 'validade_fim' => $this->paraData($dados['grade']['validade_fim']),
-                'hora_aula_semanal' => array_sum(array_column($dados['componentes'], 'quantidade_aulas')),
+                'hora_aula_semanal' => array_sum(array_column($componentes, 'quantidade_aulas')),
                 'arquivo_original' => $caminhoArquivoArmazenado,
                 'dados_brutos' => $dados,
             ]);
 
             $componentesPorNome = [];
-            foreach ($dados['componentes'] as $dadosComponente) {
+            foreach ($componentes as $dadosComponente) {
                 $componente = ComponenteCurricular::create([
                     'grade_horaria_id' => $grade->id,
                     ...$dadosComponente,
                 ]);
 
-                $componentesPorNome[$this->normalizarNomeDisciplina($componente->disciplina)] = $componente;
+                $componentesPorNome[ConciliacaoDeDisciplinas::chave($componente->disciplina)] = $componente;
             }
 
             foreach ($dados['aulas'] as $dadosAula) {
-                $componente = $componentesPorNome[$this->normalizarNomeDisciplina($dadosAula['disciplina'])] ?? null;
+                $componente = $componentesPorNome[ConciliacaoDeDisciplinas::chave((string) $dadosAula['disciplina'])] ?? null;
 
                 if ($componente === null) {
                     // Não foi possível casar a aula com uma disciplina conhecida
@@ -94,12 +100,5 @@ class GradeImportService
         }, $palavras, array_keys($palavras));
 
         return implode(' ', $resultado);
-    }
-
-    private function normalizarNomeDisciplina(string $nome): string
-    {
-        $semSufixo = preg_replace('/\s*\(.*?\)\s*$/u', '', $nome);
-
-        return mb_strtoupper(trim($semSufixo));
     }
 }

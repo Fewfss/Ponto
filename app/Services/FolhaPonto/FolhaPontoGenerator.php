@@ -160,33 +160,10 @@ class FolhaPontoGenerator
             $textoAtual = trim($editor->textoDaCelula($celulas[$indiceCelula]));
 
             if ($textoAtual === '') {
-                $nomeAbreviado = $this->abreviarDisciplina($aula->componenteCurricular->disciplina ?? '');
+                $nomeAbreviado = NomeDisciplina::abreviar($aula->componenteCurricular->disciplina ?? '');
                 $editor->definirTextoDisciplinaNaCelula($celulas[$indiceCelula], $nomeAbreviado);
             }
         }
-    }
-
-    private function abreviarDisciplina(string $nome): string
-    {
-        // Remove o que vem entre parênteses, ex.: "ESPANHOL I (Determinada)" -> "ESPANHOL I"
-        $nome = preg_replace('/\s*\([^)]*\)/u', '', $nome) ?? $nome;
-
-        $palavras = preg_split('/\s+/u', trim($nome));
-        $partes = [];
-
-        foreach ($palavras as $palavra) {
-            if ($palavra === '') {
-                continue;
-            }
-
-            if (preg_match('/^[IVXLCDM]+$/i', $palavra)) {
-                $partes[] = mb_strtoupper($palavra).'.';
-            } else {
-                $partes[] = mb_strtoupper(mb_substr($palavra, 0, 1)).'.';
-            }
-        }
-
-        return implode(' ', $partes);
     }
 
     private function indiceDoPar(string $periodo, string $horaInicio): int
