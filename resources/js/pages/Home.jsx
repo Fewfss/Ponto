@@ -4,6 +4,7 @@ import NavBar from "../components/items/NavBar.jsx";
 import Card from "../components/items/Card.jsx";
 import Footer from "../components/items/Footer.jsx";
 import "../components/styles/Home.css";
+import Carregando from "../components/items/Carregando.jsx";
 
 const Home = () => {
     return (
